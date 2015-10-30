@@ -1,7 +1,7 @@
 {
   "name": "jpacks",
   "description": "Binary data packing and unpacking.",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "homepage": "https://github.com/zswang/jpacks",
   "authors": {
     "name": "zswang",
@@ -13,8 +13,11 @@
     "node"
   ],
   "keywords": [
-    "big",
-    "integer"
+    "c",
+    "struct",
+    "serialization",
+    "pack",
+    "unpack"
   ],
   "license": "MIT",
   "devDependencies": {
@@ -22,7 +25,7 @@
     "requirejs": "2.1.15"
   },
   "ignore": [
-    "tests",
+    "debug",
     "src",
     "**/.*",
     "node_modules",

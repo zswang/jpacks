@@ -5,7 +5,7 @@
 /node_modules
 /test
 /.tmp
-
+debug
 .DS_Store
 
 *.db
