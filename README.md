@@ -55,8 +55,6 @@ console.log(JSON.stringify(user2, null, '  '));
 + Commonly used numerical types, including signed and unsigned. 常用的数值类型，包括有符号和无符号。
 + Supports array types, including fixed length or indefinite. 支持数组类型，包括定长或不定长。
 
-![img](https://cloud.githubusercontent.com/assets/536587/10779484/70ba9faa-7d6c-11e5-925d-69651c3bbdb1.png)
-
 ## License
 
 MIT © [zswang](http://weibo.com/zswang)
