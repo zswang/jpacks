@@ -4,7 +4,7 @@
   "description": "Binary data packing and unpacking.",
   "version": "0.0.2",
   "homepage": "http://github.com/zswang/jpacks",
-  "main": "jpacks.js",
+  "main": "src/jpacks.js",
   "author": {
     "name": "zswang",
     "url": "http://weibo.com/zswang"

@@ -4,6 +4,20 @@ var util = require('util');
 
 // coverage
 describe('fixtures', function () {
+  it('jpack.union()', function () {
+    jpacks.register('UnionShortString', jpacks.union(256, {
+      length: jpacks.uint8,
+      content: jpacks.shortString
+    }));
+    var union = {
+      length: 20,
+      content: '你好世界！Hello',
+    };
+    var buffer = jpacks.pack('UnionShortString', union);
+    var union2 = jpacks.unpack('UnionShortString', buffer);
+    assert.equal(JSON.stringify(union), JSON.stringify(union2));
+  });
+
   it('jpack.register("Point")', function () {
     jpacks.register('Point', {
       x: 'int32',

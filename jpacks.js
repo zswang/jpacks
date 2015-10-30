@@ -82,6 +82,16 @@
   }
   exports.array = array;
   /**
+   * 声明字节数组类型
+   *
+   * @param {number} count 元素个数
+   * @return {Schema} 返回数据结构
+   */
+  function bytes(count) {
+    return array('uint8', count);
+  }
+  exports.bytes = bytes;
+  /**
    * 声明指定长度的数组类型
    *
    * @param {string|Schema} lengthSchema 长度类型
@@ -140,17 +150,17 @@
   function lengthString(lengthSchema) {
     var schema = lengthArray(lengthSchema, 'uint8');
     return new Schema(function _unpack(buffer, options, offsets) {
-      var bytes = unpack(schema, buffer, options, offsets);
+      var stringBuffer = unpack(schema, buffer, options, offsets);
       if (typeof Buffer !== 'undefined') { // NodeJS
-        return new Buffer(bytes).toString();
+        return new Buffer(stringBuffer).toString();
       }
-      return decodeUTF8(String.fromCharCode(bytes));
+      return decodeUTF8(String.fromCharCode(stringBuffer));
     }, function _pack(value, options, buffer) {
-      var bytes;
+      var stringBuffer;
       if (typeof Buffer !== 'undefined') { // NodeJS
-        bytes = new Buffer(value);
+        stringBuffer = new Buffer(value);
       } else {
-        bytes = encodeUTF8(value).split('');
+        stringBuffer = encodeUTF8(value).split('');
       }
       pack(schema, new Buffer(value), options, buffer);
     });
@@ -163,6 +173,42 @@
    * 长字符串类型
    */
   exports.longString = lengthString('uint16');
+  /**
+   * 联合类型
+   */
+  function union(size, schemas) {
+    if (typeof size !== 'number') {
+      throw new Error('Parameter "size" must be a numeric type.');
+    }
+    if (typeof schemas !== 'object') {
+      throw new Error('Parameter "schemas" must be a object type.');
+    }
+    if (schemas instanceof Schema) {
+      throw new Error('Parameter "schemas" cannot be a Scheam object.');
+    }
+    return new Schema(function _unpack(buffer, options, offsets) {
+      var beginOffset = offsets[0];
+      var result = {};
+      var keys = Object.keys(schemas);
+      keys.forEach(function (key) {
+        offsets[0] = beginOffset;
+        result[key] = unpack(schemas[key], buffer, options, offsets);
+      });
+      offsets[0] += size;
+      return result;
+    }, function _pack(value, options, buffer) {
+      var keys = Object.keys(value);
+      var arrayBuffer = new ArrayBuffer(size);
+      var uint8Array = new Uint8Array(arrayBuffer);
+      keys.forEach(function (key) {
+        var temp = [];
+        pack(schemas[key], value[key], options, temp);
+        uint8Array.set(temp);
+      });
+      [].push.apply(buffer, uint8Array);
+    });
+  }
+  exports.union = union;
   /**
    * 数据结构
    *
