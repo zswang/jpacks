@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.0.1
+   * @version 0.0.2
    * @date 2015-10-30
    */
   var exports = {};
@@ -48,7 +48,6 @@
         return String.fromCharCode(cc);
       }
     );
-    return str;
   }
   /**
    * 参考了 c-struct 的接口
@@ -77,7 +76,7 @@
       return result;
     }, function _pack(value, options, buffer) {
       for (var i = 0; i < count; i++) {
-        pack(schema, value[i], options, buffer)
+        pack(schema, value[i], options, buffer);
       }
     });
   }
@@ -102,11 +101,11 @@
       return result;
     }, function _pack(value, options, buffer) {
       if (!value) {
-        pack(lengthSchema, 0, options, buffer)
+        pack(lengthSchema, 0, options, buffer);
       } else {
-        pack(lengthSchema, value.length, options, buffer)
+        pack(lengthSchema, value.length, options, buffer);
         for (var i = 0; i < value.length; i++) {
-          pack(itemSchema, value[i], options, buffer)
+          pack(itemSchema, value[i], options, buffer);
         }
       }
     });
