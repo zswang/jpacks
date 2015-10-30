@@ -2,9 +2,9 @@
   "name": "jpacks",
   "title": "c struct packer",
   "description": "Binary data packing and unpacking.",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "homepage": "http://github.com/zswang/jpacks",
-  "main": "src/jpacks.js",
+  "main": "jpacks.js",
   "author": {
     "name": "zswang",
     "url": "http://weibo.com/zswang"

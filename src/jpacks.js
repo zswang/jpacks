@@ -86,6 +86,18 @@
    * @param {string|Schema} schema 字节长度
    * @param {number} count 元素个数
    * @return {Schema} 返回数据结构
+   * @example 调用示例 1
+    ```js
+    var _ = jpacks;
+    var _schema = _.array(_.byte, 10);
+    var ab = _.pack(_.array(_.byte, 10), [1, 2, 3, 4]);
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [1, 2, 3, 4, 0, 0, 0, 0, 0, 0]
+
+    console.log(_.unpack(_schema, u8a));
+    // -> [1, 2, 3, 4, 0, 0, 0, 0, 0, 0]
+    ```
    */
   function array(schema, count) {
     return new Schema(function _unpack(buffer, options, offsets) {
@@ -108,6 +120,18 @@
    *
    * @param {number} count 元素个数
    * @return {Schema} 返回数据结构
+   * @example 调用示例
+    ```js
+    var _ = jpacks;
+    var _schema = _.bytes(10);
+    var ab = _.pack(_schema, [1, 2, 3, 4]);
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [1, 2, 3, 4, 0, 0, 0, 0, 0, 0]
+
+    console.log(_.unpack(_schema, u8a));
+    // -> [1, 2, 3, 4, 0, 0, 0, 0, 0, 0]
+    ```
    */
   function bytes(count) {
     return array('uint8', count);
@@ -120,6 +144,30 @@
    * @param {string|Schema} lengthSchema 长度类型
    * @param {string|Schema} itemSchema 元素类型
    * @return {Schema} 返回数据结构
+   * @example 调用示例 1
+    ```js
+    var _ = jpacks;
+    var _schema = _.lengthArray(_.byte, _.byte);
+    var ab = _.pack(_schema, [1, 2, 3, 4]);
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [4, 1, 2, 3, 4]
+
+    console.log(_.unpack(_schema, u8a));
+    // -> [1, 2, 3, 4]
+    ```
+   * @example 调用示例 2
+    ```js
+    var _ = jpacks;
+    var _schema = _.lengthArray(_.word, _.byte);
+    var ab = _.pack(_schema, [1, 2, 3, 4]);
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [0, 0, 0, 4, 1, 2, 3, 4]
+
+    console.log(_.unpack(_schema, u8a));
+    // -> [1, 2, 3, 4]
+    ```
    */
   function lengthArray(lengthSchema, itemSchema) {
     return new Schema(function _unpack(buffer, options, offsets) {
@@ -151,6 +199,18 @@
    *
    * @param {string|Schema} itemSchema 元素类型
    * @return {Schema} 返回数据结构
+   * @example 调用示例
+    ```js
+    var _ = jpacks;
+    var _schema = _.shortArray(_.byte);
+    var ab = _.pack(_schema, [1, 2, 3, 4]);
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [4, 1, 2, 3, 4]
+
+    console.log(_.unpack(_schema, u8a));
+    // -> [1, 2, 3, 4]
+    ```
    */
   function shortArray(itemSchema) {
     return lengthArray('uint8', itemSchema);
@@ -162,6 +222,18 @@
    *
    * @param {string|Schema} itemSchema 元素类型
    * @return {Schema} 返回数据结构
+   * @example 调用示例
+    ```js
+    var _ = jpacks;
+    var _schema = _.longArray(_.byte);
+    var ab = _.pack(_schema, [1, 2, 3, 4]);
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [0, 4, 1, 2, 3, 4]
+
+    console.log(_.unpack(_schema, u8a));
+    // -> [1, 2, 3, 4]
+    ```
    */
   function longArray(itemSchema) {
     return lengthArray('uint16', itemSchema);
@@ -181,30 +253,80 @@
       if (typeof Buffer !== 'undefined') { // NodeJS
         return new Buffer(stringBuffer).toString();
       }
-      return decodeUTF8(String.fromCharCode(stringBuffer));
+      return decodeUTF8(String.fromCharCode.apply(String, stringBuffer));
     }, function _pack(value, options, buffer) {
       var stringBuffer;
       if (typeof Buffer !== 'undefined') { // NodeJS
         stringBuffer = new Buffer(value);
       } else {
-        stringBuffer = encodeUTF8(value).split('');
+        stringBuffer = encodeUTF8(value).split('').map(function (item) {
+          return item.charCodeAt();
+        });
       }
-      pack(schema, new Buffer(value), options, buffer);
+      pack(schema, stringBuffer, options, buffer);
     });
   }
-
   /**
    * 短字符串类型
+   *
+   * @return {Schema} 返回数据结构
+   * @example 调用示例
+    ```js
+    var _ = jpacks;
+    var _schema = _.shortString;
+    var ab = _.pack(_schema, '你好 World!');
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [13, 228, 189, 160, 229, 165, 189, 32, 87, 111, 114, 108, 100, 33]
+
+    console.log(_.unpack(_schema, u8a));
+    // -> 你好 World!
+    ```
    */
   exports.shortString = lengthString('uint8');
 
   /**
    * 长字符串类型
+   *
+   * @return {Schema} 返回数据结构
+   * @example 调用示例
+    ```js
+    var _ = jpacks;
+    var _schema = _.longString;
+    var ab = _.pack(_schema, '你好 World!');
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [0, 13, 228, 189, 160, 229, 165, 189, 32, 87, 111, 114, 108, 100, 33]
+
+    console.log(_.unpack(_schema, u8a));
+    // -> 你好 World!
+    ```
    */
   exports.longString = lengthString('uint16');
 
   /**
-   * 联合类型
+   * 创建联合类型
+   *
+   * @param {number} size 联合类型总大小
+   * @param {Object} schema 联合类型中出现的字段
+   * @return {Schema} 返回联合类型
+   * @example 调用示例
+    ```js
+    var _ = jpacks;
+    var _schema = _.union(20, {
+      length: _.byte,
+      content: _.shortString
+    });
+    var ab = _.pack(_schema, {
+      content: '0123456789'
+    });
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [10, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+    console.log(_.unpack(_schema, u8a));
+    // -> Object {length: 10, content: "0123456789"}
+    ```
    */
   function union(size, schemas) {
     if (typeof size !== 'number') {
@@ -216,10 +338,10 @@
     if (schemas instanceof Schema) {
       throw new Error('Parameter "schemas" cannot be a Scheam object.');
     }
+    var keys = Object.keys(schemas);
     return new Schema(function _unpack(buffer, options, offsets) {
       var beginOffset = offsets[0];
       var result = {};
-      var keys = Object.keys(schemas);
       keys.forEach(function (key) {
         offsets[0] = beginOffset;
         result[key] = unpack(schemas[key], buffer, options, offsets);
@@ -227,7 +349,6 @@
       offsets[0] += size;
       return result;
     }, function _pack(value, options, buffer) {
-      var keys = Object.keys(value);
       var arrayBuffer = new ArrayBuffer(size);
       var uint8Array = new Uint8Array(arrayBuffer);
       keys.forEach(function (key) {
@@ -241,8 +362,96 @@
   exports.union = union;
 
   /**
+   * 创建条件类型
+   *
+   * @param {Object} schemas 条件类型结构，第一个字段为条件字段，其他字段为数组。数组第一元素表示命中条件，第二位类型
+   * @return {Schema} 返回联合类型
+   * @example 调用示例 1
+    ```js
+    var _ = jpacks;
+    var _schema = _.cases({
+      type: _.shortString,
+      name: ['name', _.shortString],
+      age: ['age', _.byte]
+    });
+    var ab = _.pack(_schema, {
+      type: 'name',
+      name: 'tom'
+    });
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [4, 110, 97, 109, 101, 3, 116, 111, 109]
+
+    console.log(_.unpack(_schema, u8a));
+    // -> Object {type: "name", name: "tom"}
+
+    var ab2 = _.pack(_schema, {
+      type: 'age',
+      age: 23
+    });
+    var u8a2 = new Uint8Array(ab2);
+    console.log(u8a2);
+    // -> [3, 97, 103, 101, 23]
+
+    console.log(_.unpack(_schema, u8a2));
+    // -> Object {type: "age", age: 23}
+    ```
+   */
+  function cases(schemas) {
+    if (typeof schemas !== 'object') {
+      throw new Error('Parameter "schemas" must be a object type.');
+    }
+    if (schemas instanceof Schema) {
+      throw new Error('Parameter "schemas" cannot be a Scheam object.');
+    }
+
+    var keys = Object.keys(schemas);
+    var patternName = keys[0];
+    var patternSchema = schemas[patternName];
+    keys = keys.slice(1);
+    return new Schema(function _unpack(buffer, options, offsets) {
+      var result = {};
+      var patternValue = unpack(patternSchema, buffer, options, offsets);
+      result[patternName] = patternValue;
+      keys.every(function (key) {
+        if (patternValue === schemas[key][0]) {
+          result[key] = unpack(schemas[key][1], buffer, options, offsets);
+          return false;
+        }
+        return true;
+      });
+      return result;
+    }, function _pack(value, options, buffer) {
+      var patternValue = value[patternName];
+      pack(patternSchema, patternValue, options, buffer);
+      keys.every(function (key) {
+        if (patternValue === schemas[key][0]) {
+          pack(schemas[key][1], value[key], options, buffer);
+          return false;
+        }
+        return true;
+      });
+    });
+  }
+  exports.cases = cases;
+  /**
    * 数据结构
    *
+   * @param {Function} unpack 数据解析的方法
+   *    [[[
+   *    @param {ArrayBuffer|Buffer|Array} buffer 数据缓存
+   *    @param {Object=} options 配置项
+   *    @param {Array=} offsets 第一个原始为偏移，数值类型是为了能修改值
+   *    @return {Any} 返回解析后的对象
+   *    ]]]
+   *    function unpack(buffer, options, offsets) {}
+   * @param {Function} pack 数据打包的方法
+   *    [[[
+   *    @param {Any} value 需要打包的对象
+   *    @param {Object=} options 配置项
+   *    @param {buffer=} {Array} 目标字节数组
+   *    ]]]
+   *    function pack(value, options, buffer) {}
    * @constructor 构造数据结构类型
    */
   function Schema(unpack, pack) {
@@ -313,7 +522,6 @@
    *
    * @param {string} name 数据结构名
    * @param {Object} schema 数据结构
-   * @return {Object} 返回 schema 参数
    */
   function register(name, schema) {
     schemas[name] = schema;
@@ -349,8 +557,6 @@
     if (!schema) {
       throw new Error('Parameter "schema" is undefined.');
     }
-    options = options || {};
-    offsets = offsets || [0];
     if (!(schema instanceof Schema)) {
       if (typeof schema === 'string') {
         schema = schemas[schema];
@@ -359,10 +565,16 @@
     if (!(buffer instanceof ArrayBuffer)) {
       buffer = arrayBufferFrom(buffer);
     }
-
     if (!schema) {
       throw new Error('Parameter "schema" is unregister.');
     }
+
+    options = options || {};
+    offsets = offsets || [0];
+    if (typeof options.littleEndian === 'undefined') {
+      options.littleEndian = defaultLittleEndian;
+    }
+
     if (typeof schema.unpack === 'function') {
       return schema.unpack(buffer, options, offsets);
     }
@@ -405,6 +617,9 @@
       throw new Error('Parameter "schema" is unregister.');
     }
     options = options || {};
+    if (typeof options.littleEndian === 'undefined') {
+      options.littleEndian = defaultLittleEndian;
+    }
     if (typeof schema.pack === 'function') {
       schema.pack(data, options, buffer);
     } else {
@@ -418,6 +633,23 @@
     }
   }
   exports.pack = pack;
+
+  /**
+   * 默认低字节序
+   *
+   * @type {boolean}
+   */
+  var defaultLittleEndian;
+
+  /**
+   * 设置默认低字节序
+   *
+   * @param {boolean} value 默认值
+   */
+  function setDefaultLittleEndian(value) {
+    defaultLittleEndian = value;
+  }
+  exports.setDefaultLittleEndian = setDefaultLittleEndian;
 
   if (typeof define === 'function') {
     if (define.amd || define.cmd) {

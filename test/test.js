@@ -4,35 +4,75 @@ var util = require('util');
 
 // coverage
 describe('fixtures', function () {
-  it('jpack.union()', function () {
-    jpacks.register('UnionShortString', jpacks.union(256, {
-      length: jpacks.uint8,
-      content: jpacks.shortString
-    }));
-    var union = {
-      length: 20,
-      content: '你好世界！Hello',
-    };
-    var buffer = jpacks.pack('UnionShortString', union);
-    var union2 = jpacks.unpack('UnionShortString', buffer);
-    assert.equal(JSON.stringify(union), JSON.stringify(union2));
-  });
-
-  it('jpack.register("Point")', function () {
+  it('jpacks.cases()', function () {
     jpacks.register('Point', {
       x: 'int32',
       y: 'int32'
     });
-    var point = {
+    jpacks.register('Polar', {
+      angle: 'double',
+      length: 'int32',
+      note: jpacks.shortString
+    });
+    jpacks.register('CaseType', jpacks.cases({
+      type: 'uint8',
+      point: [1, 'Point'],
+      polar: [2, 'Polar']
+    }));
+
+    var value1 = {
+      type: 1,
+      point: {
+        x: 1,
+        y: 2
+      }
+    };
+    var buffer1 = jpacks.pack('CaseType', value1);
+    var value2 = jpacks.unpack('CaseType', buffer1);
+    assert.equal(JSON.stringify(value1), JSON.stringify(value2));
+
+    var value3 = {
+      type: 2,
+      polar: {
+        angle: Math.PI,
+        length: 2,
+        note: '极坐标 1'
+      }
+    };
+    var buffer3 = jpacks.pack('CaseType', value3);
+    var value4 = jpacks.unpack('CaseType', buffer3);
+    assert.equal(JSON.stringify(value4), JSON.stringify(value3));
+  });
+  it('jpacks.union()', function () {
+    jpacks.register('UnionShortString', jpacks.union(256, {
+      length: jpacks.uint8,
+      content: jpacks.shortString
+    }));
+    var text = '你好世界！Hello';
+    var value1 = {
+      length: new Buffer(text).length,
+      content: text,
+    };
+    var buffer1 = jpacks.pack('UnionShortString', value1);
+    var value2 = jpacks.unpack('UnionShortString', buffer1);
+    assert.equal(JSON.stringify(value1), JSON.stringify(value2));
+  });
+
+  it('jpacks.register("Point")', function () {
+    jpacks.register('Point', {
+      x: 'int32',
+      y: 'int32'
+    });
+    var value1 = {
       x: 101,
       y: -101
     };
-    var buffer = jpacks.pack('Point', point);
-    var point2 = jpacks.unpack('Point', buffer);
-    assert.equal(JSON.stringify(point), JSON.stringify(point2));
+    var buffer1 = jpacks.pack('Point', value1);
+    var value2 = jpacks.unpack('Point', buffer1);
+    assert.equal(JSON.stringify(value1), JSON.stringify(value2));
   });
 
-  it('jpack.register("User")', function () {
+  it('jpacks.register("User")', function () {
     jpacks.register('User', {
       age: 'uint8',
       token: jpacks.array('byte', 10),
