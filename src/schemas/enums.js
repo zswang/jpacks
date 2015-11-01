@@ -1,4 +1,4 @@
-module.exports = function defineEnum(Schema) {
+module.exports = function (Schema) {
   /*<define>*/
   /**
    * 定义一个枚举结构
@@ -52,7 +52,8 @@ module.exports = function defineEnum(Schema) {
         };
       },
       map: map,
-      name: 'enum {}'
+      schema: 'enum(' + [Schema.stringify(baseSchema), Schema.stringify(map)] + ')',
+      namespace: 'base'
     });
   };
 

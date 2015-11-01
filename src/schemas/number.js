@@ -1,4 +1,4 @@
-module.exports = function defineArray(Schema) {
+module.exports = function defineNumber(Schema) {
   /*<define>*/
   /**
    * 基础类型
@@ -91,7 +91,7 @@ module.exports = function defineArray(Schema) {
       })('set' + item.type),
       size: item.size,
       name: name,
-      namespace: 'base',
+      namespace: 'number',
       array: item.array
     });
 

@@ -14,15 +14,17 @@ describe('fixtures', function () {
       length: 'int32',
       note: jpacks.shortString
     });
-    jpacks.register('CaseType', jpacks.cases({
+    jpacks.register('CaseType', {
       type: 'uint8',
-      point: [1, 'Point'],
-      polar: [2, 'Polar']
-    }));
+      data: jpacks.depend('type', jpacks.cases([
+        [1, 'Point'],
+        [2, 'Polar']
+      ]))
+    });
 
     var value1 = {
       type: 1,
-      point: {
+      data: {
         x: 1,
         y: 2
       }
@@ -33,7 +35,7 @@ describe('fixtures', function () {
 
     var value3 = {
       type: 2,
-      polar: {
+      data: {
         angle: Math.PI,
         length: 2,
         note: '极坐标 1'

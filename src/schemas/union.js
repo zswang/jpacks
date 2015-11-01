@@ -1,4 +1,4 @@
-module.exports = function defineUnion(Schema) {
+module.exports = function (Schema) {
   /*<define>*/
   /**
    * 创建联合类型
@@ -64,7 +64,7 @@ module.exports = function defineUnion(Schema) {
       },
       size: size,
       object: schemas,
-      name: 'union {}'
+      schema: 'union(' + Schema.stringify(size) + ')'
     });
   }
   Schema.register('union', union);

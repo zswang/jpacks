@@ -5,9 +5,10 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.1.0
-   * @date 2015-11-01
+   * @version 0.1.1
+   * @date 2015-11-02
    */
+  function createSchema() {
   /**
    * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView
    */
@@ -208,6 +209,32 @@
     return buffer;
   }
   Schema.pack = pack;
+  function stringify(obj) {
+    function scan(obj) {
+      if (typeof obj === 'object') {
+        if (obj instanceof Schema) {
+          return obj.schema;
+        }        
+        var result = new obj.constructor();
+        Object.keys(obj).forEach(function (key) {
+          result[key] = scan(obj[key]);
+        });
+        return result;
+      } else if (typeof obj === 'function') {
+        return obj.schema;
+      }
+      return obj;
+    }
+    return JSON.stringify(scan(obj) || '').replace(/"/g, '');
+  }
+  Schema.stringify = stringify;
+  Schema.prototype.toString = function () {
+    return stringify(this);
+  };
+  return Schema;
+}
+  function create() {
+    var Schema = createSchema();
   /**
    * 基础类型
    *
@@ -298,7 +325,7 @@
       })('set' + item.type),
       size: item.size,
       name: name,
-      namespace: 'base',
+      namespace: 'number',
       array: item.array
     });
     Schema.register(name, schema);
@@ -307,198 +334,155 @@
     });
   });
   /**
-   * 声明数组类型
+   * 声明指定长度或者下标的数组
    *
-   * @param {string|Schema} itemSchema 数组元素类型
-   * @param {number} count 元素个数
-   * @return {Schema} 返回数据结构
-   * @example 调用示例 1
-    ```js
-    var _ = jpacks;
-    var _schema = _.array(10, _.byte);
-    var ab = _.pack(_.array(10, _.byte), [1, 2, 3, 4]);
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [1, 2, 3, 4, 0, 0, 0, 0, 0, 0]
-    console.log(_.unpack(_schema, u8a));
-    // -> [1, 2, 3, 4, 0, 0, 0, 0, 0, 0]
-    ```
-   */
-  function array(count, itemSchema) {
-    if (typeof count !== 'number') {
-      var temp = count;
-      count = itemSchema;
-      itemSchema = temp;
-    }
-    var schema = Schema.from(itemSchema);
-    if (!schema) {
-      throw new Error('Schema "' + itemSchema + '" not define.');
-    }
-    var size = schema.size * count;
-    return new Schema({
-      unpack: function _unpack(buffer, options, offsets) {
-        if (schema.array && options.littleEndian) {
-          /* TypeArray littleEndian is true */
-          var offset = offsets[0];
-          offsets[0] += size;
-          return [].slice.apply(new schema.array(buffer, offset, count));
-        }
-        var result = [];
-        for (var i = 0; i < count; i++) {
-          result.push(Schema.unpack(schema, buffer, options, offsets));
-        }
-        return result;
-      },
-      pack: function _pack(value, options, buffer) {
-        if (schema.array && options.littleEndian) {
-          /* TypeArray littleEndian is true */
-          var arrayBuffer = new ArrayBuffer(size);
-          var typeArray = new schema.array(arrayBuffer);
-          typeArray.set(value);
-          var uint8Array = new Uint8Array(arrayBuffer);
-          [].push.apply(buffer, uint8Array);
-        }
-        for (var i = 0; i < count; i++) {
-          Schema.pack(schema, value[i], options, buffer);
-        }
-      },
-      name: schema.name + '[' + count + ']',
-      size: size,
-      namespace: 'array'
-    });
-  }
-  Schema.register('array', array);
-  Schema.register('staticArray', array);
-  function bytes(size) {
-    return array(size, 'uint8');
-  }
-  Schema.register('bytes', bytes);
-  Schema.pushPattern(function (schema) {
-    if (typeof schema === 'string') {
-      var match = schema.match(/^(\w+)\[(\d+)\]$/);
-      if (match) {
-        var baseSchema = Schema.from(match[1]);
-        if (baseSchema) {
-          var arraySchema = array(parseInt(match[2]), baseSchema);
-          Schema.register(schema, arraySchema); // 缓存
-          return arraySchema;
-        }
-      }
-    }
-  });
-  /**
-   * 声明指定长度的数组类型
-   *
-   * @param {string|Schema} lengthSchema 长度类型
    * @param {string|Schema} itemSchema 元素类型
-   * @return {Schema} 返回数据结构
+   * @param {string|Schema|number=} count 下标类型或个数
+   * @return {Schema|Function} 返回数据结构
    * @example 调用示例 1
     ```js
     var _ = jpacks;
-    var _schema = _.dynamicArray(_.byte, _.byte);
-    var ab = _.pack(_schema, [1, 2, 3, 4]);
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [4, 1, 2, 3, 4]
-    console.log(_.unpack(_schema, u8a));
-    // -> [1, 2, 3, 4]
+    var schema = jpacks.array('int16', 2);
+    console.log(String(schema));
+    // > array(int16,2)
+    var value = [12337, 12851];
+    var buffer = jpacks.pack(schema, value);
+    console.log(buffer);
+    // > [48, 49, 50, 51]
+    console.log(jpacks.unpack(schema, buffer));
+    // > [12337, 12851]
     ```
    * @example 调用示例 2
     ```js
     var _ = jpacks;
-    var _schema = _.dynamicArray(_.word, _.byte);
-    var ab = _.pack(_schema, [1, 2, 3, 4]);
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [0, 0, 0, 4, 1, 2, 3, 4]
-    console.log(_.unpack(_schema, u8a));
-    // -> [1, 2, 3, 4]
+    var schema = jpacks.array('int16', 'int8');
+    console.log(String(schema));
+    // > array(int16,int8)
+    var value = [12337, 12851];
+    var buffer = jpacks.pack(schema, value);
+    console.log(buffer);
+    // > [ 2, 48, 49, 50, 51 ]
+    console.log(jpacks.unpack(schema, buffer));
+    // > [ 12337, 12851 ]
     ```
-   */
-  function dynamicArray(lengthSchema, itemSchema) {
-    lengthSchema = Schema.from(lengthSchema);
-    if (lengthSchema.namespace !== 'base') {
-      throw new Error('Parameter "lengthSchema" is not a numeric type.');
-    }
-    if (!itemSchema) {
+   * @example 调用示例 3
+    ```js
+    var _ = jpacks;
+    var schema = jpacks.array('int16')(6);
+    console.log(String(schema));
+    // > array(int16,6)
+    var value = [12337, 12851];
+    var buffer = jpacks.pack(schema, value);
+    console.log(buffer);
+    // > [ 48, 49, 50, 51, 0, 0, 0, 0, 0, 0, 0, 0 ]
+    console.log(jpacks.unpack(schema, buffer));
+    // > [ 12337, 12851, 0, 0, 0, 0 ]
+    ```
+  */
+  function array(itemSchema, count) {
+    if (typeof itemSchema === 'undefined') {
       throw new Error('Parameter "itemSchema" is undefined.');
     }
-    return new Schema({
-      unpack: function _unpack(buffer, options, offsets) {
-        var length = Schema.unpack(lengthSchema, buffer, options, offsets);
-        return Schema.unpack(Schema.array(length, itemSchema), buffer, options, offsets);
-      },
-      pack: function _pack(value, options, buffer) {
-        if (!value) {
-          Schema.pack(lengthSchema, 0, options, buffer);
-        } else {
-          Schema.pack(lengthSchema, value.length, options, buffer);
-          Schema.pack(Schema.array(value.length, itemSchema), value, options, buffer);
-        }
-      },
-      name: 'dynamic array[..' + lengthSchema.name + '..]',
-      namespace: 'dynamicArray',
-      size: lengthSchema.size
-    });
-  }
-  Schema.register('dynamicArray', dynamicArray);
-  function shortArray(schema) {
-    return dynamicArray('uint8', schema);
-  }
-  Schema.register('shortArray', shortArray);
-  function smallArray(schema) {
-    return dynamicArray('uint16', schema);
-  }
-  Schema.register('smallArray', smallArray);
-  function longArray(schema) {
-    return dynamicArray('uint32', schema);
-  }
-  Schema.register('longArray', longArray);
-  // 'int8[.]'         - shortArray
-  // 'int8[..]' - smallArray
-  // 'int8[....]'      - longArray
-  Schema.pushPattern(function (schema) {
-    if (typeof schema === 'string') {
-      var match = schema.match(/^(\w+)\[(\.|\..|\....)\]$/);
-      if (match) {
-        var baseSchema = Schema.from(match[1]);
-        if (baseSchema) {
-          var lengthSchema = 'uint16';
-          switch (match[2]) {
-          case '.':
-            lengthSchema = 'uint8'
-            break;
-          case '....':
-            lengthSchema = 'uint32'
-            break;
-          }
-          var arraySchema = dynamicArray(lengthSchema, baseSchema);
-          Schema.register(schema, arraySchema); // 缓存
-          return arraySchema;
+    var creatorSchema = function (count) {
+      var size;
+      var countSchema;
+      if (typeof count === 'number') {
+        size = itemSchema.size * count;
+      } else {
+        countSchema = Schema.from(count);
+        if (countSchema.namespace !== 'number') {
+          throw new Error('Parameter "count" is not a numeric type.');
         }
       }
+      return new Schema({
+        unpack: function _unpack(buffer, options, offsets) {
+          var length = count;
+          if (countSchema) {
+            length = Schema.unpack(countSchema, buffer, options, offsets);
+          }
+          if (itemSchema.array && options.littleEndian) {
+            size = countSchema.size * length;
+            /* TypeArray littleEndian is true */
+            var offset = offsets[0];
+            offsets[0] += size;
+            return [].slice.apply(new itemSchema.array(buffer, offset, length));
+          }
+          var result = [];
+          for (var i = 0; i < length; i++) {
+            result.push(Schema.unpack(itemSchema, buffer, options, offsets));
+          }
+          return result;
+        },
+        pack: function _pack(value, options, buffer) {
+          var length = count;
+          if (countSchema) {
+            length = value ? value.length : 0;
+            Schema.pack(countSchema, length, options, buffer);
+          }
+          if (itemSchema.array && options.littleEndian) {
+            size = itemSchema.size * length;
+            /* TypeArray littleEndian is true */
+            var arrayBuffer = new ArrayBuffer(size);
+            var typeArray = new itemSchema.array(arrayBuffer);
+            typeArray.set(value);
+            var uint8Array = new Uint8Array(arrayBuffer);
+            [].push.apply(buffer, uint8Array);
+          }
+          for (var i = 0; i < length; i++) {
+            Schema.pack(itemSchema, value[i], options, buffer);
+          }
+        },
+        schema: 'array(' + [Schema.stringify(itemSchema), Schema.stringify(count)] + ')',
+        namespace: 'array',
+        size: size
+      });
+    };
+    creatorSchema.name = 'array(' + itemSchema.name + ')';
+    if (arguments.length === 1) {
+      return creatorSchema;
+    } else {
+      return creatorSchema(count);
     }
-  });
+  } 
+  Schema.register('array', array);
+  function shortArray(itemSchema) {
+    return array(itemSchema, 'uint8');
+  }
+  Schema.register('shortArray', shortArray);
+  function smallArray(itemSchema) {
+    return array(itemSchema, 'uint16');
+  }
+  Schema.register('smallArray', smallArray);
+  function longArray(itemSchema) {
+    return array(itemSchema, 'uint32');
+  }
+  Schema.register('longArray', longArray);
+  function bytes(count) {
+    return Schema.array('uint8', count);
+  }
+  Schema.register('bytes', bytes);
   /**
    * 定义一个对象结构
    *
    * @param {object} schema 数据结构
    * @return {Schema} 返回构建的数据结构
    */
-  function object(schema) {
-    if (typeof schema !== 'object') {
+  function object(objectSchema) {
+    if (typeof objectSchema !== 'object') {
       throw new Error('Parameter "schemas" must be a object type.');
     }
-    if (schema instanceof Schema) {
-      return schema;
+    if (objectSchema instanceof Schema) {
+      return objectSchema;
     }
+    var names = Schema.stringify(objectSchema);
+    var keys = Object.keys(objectSchema);
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
-        var result = {};
+        var result = new objectSchema.constructor();
         var $scope = options.$scope;
         options.$scope = result;
-        Object.keys(schema).forEach(function (key) {
-          result[key] = Schema.unpack(schema[key], buffer, options, offsets);
+        keys.forEach(function (key) {
+          result[key] = Schema.unpack(objectSchema[key], buffer, options, offsets);
         });
         options.$scope = $scope;
         return result;
@@ -506,13 +490,14 @@
       pack: function _pack(value, options, buffer) {
         var $scope = options.$scope;
         options.$scope = value;
-        Object.keys(schema).forEach(function (key) {
-          Schema.pack(schema[key], value[key], options, buffer);
+        keys.forEach(function (key) {
+          Schema.pack(objectSchema[key], value[key], options, buffer);
         });
         options.$scope = $scope;
       },
-      object: schema,
-      name: 'object {}'
+      object: objectSchema,
+      schema: 'object(' + names + ')',
+      namespace: 'object'
     });
   };
   Schema.register('object', object);
@@ -589,62 +574,43 @@
       },
       size: size,
       object: schemas,
-      name: 'union {}'
+      schema: 'union(' + Schema.stringify(size) + ')'
     });
   }
   Schema.register('union', union);
   /**
-   * 创建条件类型
+   * 定义一个枚举结构
    *
-   * @param {Object} schemas 条件类型结构，第一个字段为条件字段，其他字段为数组。数组第一元素表示命中条件，第二位类型
-   * @return {Schema} 返回联合类型
-   * @example 调用示例 1
-    ```js
-    var _ = jpacks;
-    var _schema = _.cases({
-      type: _.shortString,
-      name: ['name', _.shortString],
-      age: ['age', _.byte]
-    });
-    var ab = _.pack(_schema, {
-      type: 'name',
-      name: 'tom'
-    });
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [4, 110, 97, 109, 101, 3, 116, 111, 109]
-    console.log(_.unpack(_schema, u8a));
-    // -> Object {type: "name", name: "tom"}
-    var ab2 = _.pack(_schema, {
-      type: 'age',
-      age: 23
-    });
-    var u8a2 = new Uint8Array(ab2);
-    console.log(u8a2);
-    // -> [3, 97, 103, 101, 23]
-    console.log(_.unpack(_schema, u8a2));
-    // -> Object {type: "age", age: 23}
-    ```
-  */
-  function cases(schemas) {
-    if (typeof schemas !== 'object') {
-      throw new Error('Parameter "schemas" must be a object type.');
+   * @param {Schema} baseSchema 枚举结构的基础类型
+   * @param {Array|Object} map 枚举类型字典
+   * @return {Schema} 返回构建的数据结构
+   */
+  function enums(baseSchema, map) {
+    baseSchema = Schema.from(baseSchema);
+    if (!baseSchema) {
+      throw new Error('Parameter "baseSchema" is undefined.');
     }
-    if (schemas instanceof Schema) {
-      throw new Error('Parameter "schemas" cannot be a Schema object.');
+    if (baseSchema.namespace !== 'base') {
+      throw new Error('Parameter "baseSchema" is not a numeric type.');
     }
-    var keys = Object.keys(schemas);
-    var patternName = keys[0];
-    var patternSchema = schemas[patternName];
-    keys = keys.slice(1);
+    if (typeof map !== 'object') {
+      throw new Error('Parameter "map" must be a object type.');
+    }
+    if (map instanceof Array) {
+      var temp = {};
+      map.forEach(function (item, index) {
+        temp[item] = index;
+      });
+      map = temp;
+    }
+    var keys = Object.keys(map);
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
-        var result = {};
-        var patternValue = Schema.unpack(patternSchema, buffer, options, offsets);
-        result[patternName] = patternValue;
+        var baseValue = Schema.unpack(baseSchema, buffer, options, offsets);
+        var result;
         keys.every(function (key) {
-          if (patternValue === schemas[key][0]) {
-            result[key] = Schema.unpack(schemas[key][1], buffer, options, offsets);
+          if (map[key] === baseValue) {
+            result = key;
             return false;
           }
           return true;
@@ -652,21 +618,22 @@
         return result;
       },
       pack: function _pack(value, options, buffer) {
-        var patternValue = value[patternName];
-        Schema.pack(patternSchema, patternValue, options, buffer);
-        keys.every(function (key) {
-          if (patternValue === schemas[key][0]) {
-            Schema.pack(schemas[key][1], value[key], options, buffer);
+        if (keys.every(function (key) {
+          if (key === value) {
+            Schema.pack(baseSchema, map[key], options, buffer);
             return false;
           }
           return true;
-        });
+        })) {
+          throw new Error('Not find enum "' + value + '".');
+        };
       },
-      name: 'cases{' + patternName + '}',
-      namespace: 'cases'
+      map: map,
+      schema: 'enum(' + [Schema.stringify(baseSchema), Schema.stringify(map)] + ')',
+      namespace: 'base'
     });
-  }
-  Schema.register('cases', cases);
+  };
+  Schema.register('enums', enums);
   /**
    * 对字符串进行 utf8 编码
    *
@@ -723,11 +690,10 @@
       });
     }
   }
-  Schema.stringBytes = stringBytes;
   /**
    * 声明指定长度的字符串
    *
-   * @param {number} size 字节个数
+   * @param {number|string|Schema} size 字节个数下标类型
    * @return {Schema} 返回数据结构
    */
   function string(size) {
@@ -743,67 +709,12 @@
       pack: function _pack(value, options, buffer) {
         Schema.pack(schema, stringBytes(value), options, buffer);
       },
-      namespace: 'staticString',
-      name: 'string{' + size + '}',
+      namespace: 'string',
+      name: 'string(' + Schema.stringify(size) + ')',
       size: size
     });
   }
   Schema.register('string', string);
-  Schema.register('staticString', string);
-  Schema.pushPattern(function (schema) {
-    if (typeof schema === 'string') {
-      var match = schema.match(/^string\{(\d+)\}$/);
-      if (match) {
-        var arraySchema = string(parseInt(match[1]));
-        Schema.register(schema, arraySchema); // 缓存
-        return arraySchema;
-      }
-    }
-  });
-  /**
-   * 声明指定长度的字符串
-   *
-   * @param {string|Schema} lengthSchema 长度类型
-   * @return {Schema} 返回数据结构
-   * @example 调用示例
-    ```js
-    var _ = jpacks;
-    var _schema = _.dynamicString('int32');
-    var ab = _.pack(_schema, '你好 World!');
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [0, 0, 0, 13, 228, 189, 160, 229, 165, 189, 32, 87, 111, 114, 108, 100, 33]
-    console.log(_.unpack(_schema, u8a));
-    // -> 你好 World!
-    ```
-   */
-  function dynamicString(lengthSchema) {
-    lengthSchema = Schema.from(lengthSchema);
-    if (!lengthSchema) {
-      throw new Error('Parameter "lengthSchema" is undefined.');
-    }
-    if (lengthSchema.namespace !== 'base') {
-      throw new Error('Parameter "lengthSchema" is not a numeric type.');
-    }
-    return new Schema({
-      unpack: function _unpack(buffer, options, offsets) {
-        var length = Schema.unpack(lengthSchema, buffer, options, offsets);
-        return Schema.unpack(Schema.string(length), buffer, options, offsets);
-      },
-      pack: function _pack(value, options, buffer) {
-        if (!value) {
-          Schema.pack(lengthSchema, 0, options, buffer);
-        } else {
-          var bytes = Schema.stringBytes(value);
-          Schema.pack(lengthSchema, bytes.length, options, buffer);
-          Schema.pack(Schema.bytes(bytes.length), bytes, options, buffer);
-        }
-      },
-      namespace: 'dynamicString',
-      name: 'string{..' + lengthSchema.name + '..}'
-    });
-  }
-  Schema.register('dynamicString', dynamicString);
   /**
    * 短字符串类型
    *
@@ -820,7 +731,7 @@
     // -> 你好 World!
     ```
    */
-  Schema.register('shortString', dynamicString('uint8'));
+  Schema.register('shortString', string('uint8'));
   /**
    * 长字符串类型
    *
@@ -837,9 +748,9 @@
     // -> 你好 World!
     ```
    */
-  Schema.register('smallString', dynamicString('uint16'));
+  Schema.register('smallString', string('uint16'));
   /**
-   * 长字符串类型
+   * 超长字符串类型
    *
    * @return {Schema} 返回数据结构
    * @example 调用示例
@@ -854,116 +765,7 @@
     // -> 你好 World!
     ```
    */
-  Schema.register('longString', dynamicString('uint32'));
-  function dependArray(field, itemSchema) {
-    if (typeof field !== 'string') {
-      throw new Error('Parameter "field" must be a string.');
-    }
-    return new Schema({
-      unpack: function _unpack(buffer, options, offsets) {
-        if (!options.$scope) {
-          throw new Error('Unpack must running in object.');
-        }
-        var length = options.$scope[field];
-        if (typeof length !== 'number') {
-          throw new Error('Field "' + field + '" must be a number.');
-        }
-        return Schema.unpack(Schema.staticArray(length, itemSchema), buffer, options, offsets);
-      },
-      pack: function _pack(value, options, buffer) {
-        var length = options.$scope[field];
-        if (typeof length !== 'number') {
-          throw new Error('Field "' + field + '" must be a number.');
-        }
-        Schema.pack(Schema.array(length, itemSchema), value, options, buffer);
-      },
-      name: 'depend array{' + field + '}',
-      namespace: 'dependArray'
-    });
-  }
-  Schema.register('dependArray', dependArray);
-  function dependString(field, itemSchema) {
-    if (typeof field !== 'string') {
-      throw new Error('Parameter "field" must be a string.');
-    }
-    return new Schema({
-      unpack: function _unpack(buffer, options, offsets) {
-        if (!options.$scope) {
-          throw new Error('Unpack must running in object.');
-        }
-        var size = options.$scope[field];
-        if (typeof size !== 'number') {
-          throw new Error('Field "' + field + '" must be a number.');
-        }
-        return Schema.unpack(Schema.staticString(size, itemSchema), buffer, options, offsets);
-      },
-      pack: function _pack(value, options, buffer) {
-        var size = options.$scope[field];
-        if (typeof size !== 'number') {
-          throw new Error('Field "' + field + '" must be a number.');
-        }
-        Schema.pack(Schema.string(size), value, options, buffer);
-      },
-      name: 'depend string{' + field + '}',
-      namespace: 'dependString'
-    });
-  }
-  Schema.register('dependString', dependString);
-  /**
-   * 定义一个枚举结构
-   *
-   * @param {Schema} baseSchema 枚举结构的基础类型
-   * @param {Array|Object} map 枚举类型字典
-   * @return {Schema} 返回构建的数据结构
-   */
-  function enums(baseSchema, map) {
-    baseSchema = Schema.from(baseSchema);
-    if (!baseSchema) {
-      throw new Error('Parameter "baseSchema" is undefined.');
-    }
-    if (baseSchema.namespace !== 'base') {
-      throw new Error('Parameter "baseSchema" is not a numeric type.');
-    }
-    if (typeof map !== 'object') {
-      throw new Error('Parameter "map" must be a object type.');
-    }
-    if (map instanceof Array) {
-      var temp = {};
-      map.forEach(function (item, index) {
-        temp[item] = index;
-      });
-      map = temp;
-    }
-    var keys = Object.keys(map);
-    return new Schema({
-      unpack: function _unpack(buffer, options, offsets) {
-        var baseValue = Schema.unpack(baseSchema, buffer, options, offsets);
-        var result;
-        keys.every(function (key) {
-          if (map[key] === baseValue) {
-            result = key;
-            return false;
-          }
-          return true;
-        });
-        return result;
-      },
-      pack: function _pack(value, options, buffer) {
-        if (keys.every(function (key) {
-          if (key === value) {
-            Schema.pack(baseSchema, map[key], options, buffer);
-            return false;
-          }
-          return true;
-        })) {
-          throw new Error('Not find enum "' + value + '".');
-        };
-      },
-      map: map,
-      name: 'enum {}'
-    });
-  };
-  Schema.register('enums', enums);
+  Schema.register('longString', string('uint32'));
   /**
    * 以零号字符结尾的字符串
    *
@@ -997,11 +799,116 @@
       Schema.pack('byte', 0, options, buffer);
     },
     namespace: 'cstring',
-    name: 'cstring'
+    schema: 'cstring'
   });
   Schema.register('cstring', cstring);
   Schema.register('pchar', cstring);
-  var exports = Schema;
+  /**
+   * 创建条件类型
+   *
+   * @param {Array of array} patterns 数组第一元素表示命中条件，第二位类型
+   * @return {Schema} 返回条件类型
+   * @example 调用示例 1
+    ```js
+    var _ = jpacks;
+    var _schema = {
+      name: ['name', _.shortString],
+      age: ['age', _.byte]
+    };
+    var ab = _.pack(_schema, {
+      type: 'name',
+      name: 'tom'
+    });
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [4, 110, 97, 109, 101, 3, 116, 111, 109]
+    console.log(_.unpack(_schema, u8a));
+    // -> Object {type: "name", name: "tom"}
+    var ab2 = _.pack(_schema, {
+      type: 'age',
+      age: 23
+    });
+    var u8a2 = new Uint8Array(ab2);
+    console.log(u8a2);
+    // -> [3, 97, 103, 101, 23]
+    console.log(_.unpack(_schema, u8a2));
+    // -> Object {type: "age", age: 23}
+    ```
+  */
+  function cases(patterns) {
+    /*<safe>*/
+    if (typeof patterns !== 'object') {
+      throw new Error('Parameter "patterns" must be a object type.');
+    }
+    if (patterns instanceof Schema) {
+      throw new Error('Parameter "patterns" cannot be a Schema object.');
+    }
+    if (!(patterns instanceof Array)) {
+      throw new Error('Parameter "patterns" must be a array.');
+    }
+    /*</safe>*/
+    var schemaCreator = function (value) {
+      for (var i = 0; i < patterns.length; i++) {
+        if (patterns[i][0] === value) {
+          return patterns[i][1];
+        }
+      }
+    };
+    schemaCreator.schema = 'cases(' + Schema.stringify(patterns) + ')';
+    schemaCreator.namespace = 'cases';
+    return schemaCreator;
+  }
+  Schema.register('cases', cases);
+  /**
+   * 声明字段依赖结构
+   *
+   * @param {string} field 字段名
+   * @param {Function} schemaCreator 创建数据结构的方法
+   * [[[
+   *    @param {Any} value 传递值
+   *    @return {Schema} 返回数据结构
+   *    function schemaCreator(value) {}
+   * ]]]
+   */
+  function depend(field, schemaCreator) {
+    if (typeof field !== 'string') {
+      throw new Error('Parameter "field" must be a string.');
+    }
+    if (typeof schemaCreator !== 'function') {
+      throw new Error('Parameter "field" must be a function.');
+    }
+    return new Schema({
+      unpack: function _unpack(buffer, options, offsets) {
+        if (!options.$scope) {
+          throw new Error('Unpack must running in object.');
+        }
+        var fieldValue = options.$scope[field];
+        if (typeof fieldValue === 'undefined') {
+          throw new Error('Field "' + field + '" is undefined.');
+        }
+        return Schema.unpack(schemaCreator(fieldValue), buffer, options, offsets);
+      },
+      pack: function _pack(value, options, buffer) {
+        var fieldValue = options.$scope[field];
+        if (typeof fieldValue === 'undefined') {
+          throw new Error('Field "' + field + '" is undefined.');
+        }
+        Schema.pack(schemaCreator(fieldValue), value, options, buffer);
+      },
+      schema: 'depend(' + [field, Schema.stringify(schemaCreator)] + ')',
+      namespace: 'depend'
+    });
+  }
+  Schema.register('depend', depend);
+  function dependArray(field, itemSchema) {
+    return depend(field, Schema.array(itemSchema));
+  }
+  Schema.register('dependArray', dependArray);
+    return Schema;
+  }
+  var root = create();
+  root.create = create;
+  var exports = root;
   if (typeof define === 'function') {
     if (define.amd || define.cmd) {
       define(function () {

@@ -1,4 +1,4 @@
-module.exports = function defineCString(Schema) {
+module.exports = function (Schema) {
   /*<define>*/
   /**
    * 以零号字符结尾的字符串
@@ -34,7 +34,7 @@ module.exports = function defineCString(Schema) {
       Schema.pack('byte', 0, options, buffer);
     },
     namespace: 'cstring',
-    name: 'cstring'
+    schema: 'cstring'
   });
   Schema.register('cstring', cstring);
   Schema.register('pchar', cstring);

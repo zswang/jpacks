@@ -24,31 +24,34 @@
   /*</jdists>*/
 
   /*<jdists import="./schema.js?define">*/
-  var Schema = require('./schema');
+  var createSchema = require('./schema');
   /*</jdists>*/
+  
+  function create() {
+    var Schema = createSchema();
+    /*<jdists encoding="regex" pattern="/^.*'(.*)'.*$/mg" replacement="<!--jdists import='$1.js?define'/-->">*/
+    require('./schemas/number')(Schema);
 
-  /*<jdists encoding="regex" pattern="/~/g" replacement="--">*/
-    /*<jdists encoding="regex" pattern="/^.*'(.*)'.*$/mg" replacement="<!~jdists import='$1.js?define'/~>">*/
-  require('./schemas/base')(Schema);
-  require('./schemas/staticArray')(Schema);
-  require('./schemas/dynamicArray')(Schema);
+    require('./schemas/array')(Schema);
+    require('./schemas/bytes')(Schema);
 
-  require('./schemas/object')(Schema);
-  require('./schemas/union')(Schema);
-  require('./schemas/cases')(Schema);
+    require('./schemas/object')(Schema);
+    require('./schemas/union')(Schema);
+    require('./schemas/enums')(Schema);
 
-  require('./schemas/staticString')(Schema);
-  require('./schemas/dynamicString')(Schema);
+    require('./schemas/string')(Schema);
 
-  require('./schemas/dependArray')(Schema);
-  require('./schemas/dependString')(Schema);
+    require('./schemas/cstring')(Schema);
 
-  require('./schemas/enums')(Schema);
-  require('./schemas/cstring')(Schema);
+    require('./schemas/cases')(Schema);
+    require('./schemas/depend')(Schema);
     /*</jdists>*/
-  /*</jdists>*/
-
-  var exports = Schema;
+    
+    return Schema;
+  }
+  var root = create();
+  root.create = create;
+  var exports = root;
 
   if (typeof define === 'function') {
     if (define.amd || define.cmd) {

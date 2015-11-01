@@ -1,5 +1,5 @@
+/*<define>*/
 function createSchema() {
-  /*<define>*/
   /**
    * @see https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView
    */
@@ -217,9 +217,31 @@ function createSchema() {
     return buffer;
   }
   Schema.pack = pack;
-  /*</define>*/
 
+  function stringify(obj) {
+    function scan(obj) {
+      if (typeof obj === 'object') {
+        if (obj instanceof Schema) {
+          return obj.schema;
+        }        
+        var result = new obj.constructor();
+        Object.keys(obj).forEach(function (key) {
+          result[key] = scan(obj[key]);
+        });
+        return result;
+      } else if (typeof obj === 'function') {
+        return obj.schema;
+      }
+      return obj;
+    }
+    return JSON.stringify(scan(obj) || '').replace(/"/g, '');
+  }
+  Schema.stringify = stringify;
+
+  Schema.prototype.toString = function () {
+    return stringify(this);
+  };
   return Schema;
 }
-
-module.exports = createSchema();
+/*</define>*/
+module.exports = createSchema;

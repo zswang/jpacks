@@ -1,4 +1,4 @@
-module.exports = function defineStaticString(Schema) {
+module.exports = function (Schema) {
   /*<define>*/
   /**
    * 对字符串进行 utf8 编码
@@ -20,7 +20,6 @@ module.exports = function defineStaticString(Schema) {
       }
     );
   }
-
   /**
    * 对 utf8 字符串进行解码
    *
@@ -41,7 +40,6 @@ module.exports = function defineStaticString(Schema) {
       }
     );
   }
-
   /**
    * 将字符串转换为字节数组
    *
@@ -58,12 +56,11 @@ module.exports = function defineStaticString(Schema) {
       });
     }
   }
-  Schema.stringBytes = stringBytes;
 
   /**
    * 声明指定长度的字符串
    *
-   * @param {number} size 字节个数
+   * @param {number|string|Schema} size 字节个数下标类型
    * @return {Schema} 返回数据结构
    */
   function string(size) {
@@ -79,23 +76,63 @@ module.exports = function defineStaticString(Schema) {
       pack: function _pack(value, options, buffer) {
         Schema.pack(schema, stringBytes(value), options, buffer);
       },
-      namespace: 'staticString',
-      name: 'string{' + size + '}',
+      namespace: 'string',
+      name: 'string(' + Schema.stringify(size) + ')',
       size: size
     });
   }
-
   Schema.register('string', string);
-  Schema.register('staticString', string);
-  Schema.pushPattern(function (schema) {
-    if (typeof schema === 'string') {
-      var match = schema.match(/^string\{(\d+)\}$/);
-      if (match) {
-        var arraySchema = string(parseInt(match[1]));
-        Schema.register(schema, arraySchema); // 缓存
-        return arraySchema;
-      }
-    }
-  });
+
+  /**
+   * 短字符串类型
+   *
+   * @return {Schema} 返回数据结构
+   * @example 调用示例
+    ```js
+    var _ = jpacks;
+    var _schema = _.shortString;
+    var ab = _.pack(_schema, '你好 World!');
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [13, 228, 189, 160, 229, 165, 189, 32, 87, 111, 114, 108, 100, 33]
+    console.log(_.unpack(_schema, u8a));
+    // -> 你好 World!
+    ```
+   */
+  Schema.register('shortString', string('uint8'));
+  /**
+   * 长字符串类型
+   *
+   * @return {Schema} 返回数据结构
+   * @example 调用示例
+    ```js
+    var _ = jpacks;
+    var _schema = _.smallString;
+    var ab = _.pack(_schema, '你好 World!');
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [0, 13, 228, 189, 160, 229, 165, 189, 32, 87, 111, 114, 108, 100, 33]
+    console.log(_.unpack(_schema, u8a));
+    // -> 你好 World!
+    ```
+   */
+  Schema.register('smallString', string('uint16'));
+  /**
+   * 超长字符串类型
+   *
+   * @return {Schema} 返回数据结构
+   * @example 调用示例
+    ```js
+    var _ = jpacks;
+    var _schema = _.longString;
+    var ab = _.pack(_schema, '你好 World!');
+    var u8a = new Uint8Array(ab);
+    console.log(u8a);
+    // -> [0, 0, 0, 13, 228, 189, 160, 229, 165, 189, 32, 87, 111, 114, 108, 100, 33]
+    console.log(_.unpack(_schema, u8a));
+    // -> 你好 World!
+    ```
+   */
+  Schema.register('longString', string('uint32'));
   /*</define>*/
 };
