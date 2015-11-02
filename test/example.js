@@ -108,14 +108,14 @@ describe("./src/schemas/cases.js", function () {
   });
 });
 describe("./src/schemas/cstring.js", function () {
-  it("cstring()", function () {
+  it("cstring", function () {
     var _ = jpacks;
-    var _schema = _.cstring;
+    var _schema = _.cstring(32);
     print(_.stringify(_schema));
     assert.equal(printValue, 'cstring')
     var buffer = _.pack(_schema, 'Hello 你好！');
     print(buffer.join(' '));
-    assert.equal(printValue, '72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0')
+    assert.equal(printValue, '72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0')
     print(_.unpack(_schema, buffer));
     assert.equal(printValue, 'Hello 你好！')
   });
