@@ -29,12 +29,14 @@ module.exports = function (Schema) {
    '''</example>'''
    */
   function unionCreator(schemas, size) {
+    /*<safe>*/
     if (typeof schemas !== 'object') {
       throw new Error('Parameter "schemas" must be a object type.');
     }
     if (schemas instanceof Schema) {
       throw new Error('Parameter "schemas" cannot be a Schema object.');
     }
+    /*</safe>*/
     var keys = Object.keys(schemas);
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {

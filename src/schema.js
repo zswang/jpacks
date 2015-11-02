@@ -132,7 +132,7 @@ function createSchema() {
    *
    * @type {boolean}
    */
-  var defaultLittleEndian;
+  var defaultLittleEndian = true;
 
   /**
    * 设置默认低字节序
@@ -250,7 +250,7 @@ function createSchema() {
     ```
    '''</example>'''
    '''<example>'''
-   * @example 过程注入
+   * @example together():hook
     ```js
     var _ = jpacks;
     function f(a, b, c) {}

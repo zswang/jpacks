@@ -25,10 +25,10 @@ module.exports = function defineNumber(Schema) {
       float64: 2.94296650666094e+189
     });
     console.log(buffer.join(' '));
-    // -> 103 69 35 1 120 86 52 16
+    // -> 16 52 86 120 1 35 69 103
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"int8":103,"int16":26437,"int32":1732584193,"uint8":103,"uint16":26437,"uint32":1732584193,"float32":9.30951905225494e+23,"float64":2.94296650666094e+189,"shortint":103,"smallint":26437,"longint":1732584193,"byte":103,"word":26437,"longword":1732584193}
+    // -> {"int8":16,"int16":13328,"int32":2018915344,"uint8":16,"uint16":13328,"uint32":2018915344,"float32":1.7378241885569425e+34,"float64":2.94296650666094e+189,"shortint":16,"smallint":13328,"longint":2018915344,"byte":16,"word":13328,"longword":2018915344}
     ```
    '''</example>'''
    * @example map is object

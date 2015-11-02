@@ -23,7 +23,7 @@ module.exports = function(Schema) {
 
     var buffer = _.pack(_schema, 2.94296650666094e+189);
     console.log(buffer.join(' '));
-    // -> 24 58 92 126 7 41 75 111
+    // -> 111 75 41 7 126 92 58 24
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // -> 2.94296650666094e+189
@@ -31,12 +31,14 @@ module.exports = function(Schema) {
    '''</example>'''
    */
   function parseCreator(encode, decode, dataSchema, size) {
+    /*<safe>*/
     if (typeof encode !== 'function') {
       throw new Error('Parameter "compress" must be a function.');
     }
     if (typeof decode !== 'function') {
       throw new Error('Parameter "decompress" must be a function.');
     }
+    /*</safe>*/
 
     var schema = Schema.bytes(size);
     return new Schema({

@@ -11,74 +11,66 @@ module.exports = function(Schema) {
     var _ = jpacks;
     var _schema = _.cstring(32);
     console.log(_.stringify(_schema));
-    // -> cstring
+    // -> cstring(32)
 
     var buffer = _.pack(_schema, 'Hello 你好！');
     console.log(buffer.join(' '));
-    // -> 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    // -> 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 
-    console.log(_.unpack(_schema, buffer));
-    // -> Hello 你好！
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> "Hello 你好！"
     ```
    '''</example>'''
    '''<example>'''
    * @example cstringCreator():pchar
     ```js
     var _ = jpacks;
-    var _schema = _array(_.pchar, 'uint8');
+    var _schema = _.array(_.pchar, 'uint8');
     console.log(_.stringify(_schema));
-    // -> cstring
+    // -> array(cstring(true),uint8)
 
     var buffer = _.pack(_schema, ['abc', 'defghijk', 'g']);
     console.log(buffer.join(' '));
-    // -> 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    // -> 3 97 98 99 0 100 101 102 103 104 105 106 107 0 103 0
 
-    console.log(_.unpack(_schema, buffer));
-    // -> Hello 你好！
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> ["abc","defghijk","g"]
     ```
    '''</example>'''
    */
   function cstringCreator(size) {
-    if (size === true) { // 自动大小
-      return new Schema({
-        unpack: function _unpack(buffer, options, offsets) {
-          var uint8Array = new Uint8Array(buffer, offsets[0]);
-          var size = 0;
-          while (uint8Array[size]) {
-            size++;
-          }
-          var result = Schema.unpack(Schema.string(size), buffer, options, offsets);
-          offsets[0]++;
-          return result;
-        },
-        pack: function _pack(value, options, buffer) {
-          var bytes = Schema.stringBytes(value);
-          Schema.pack(Schema.bytes(bytes.length), bytes, options, buffer);
-          Schema.pack('byte', 0, options, buffer);
-        },
-        namespace: 'cstring',
-        args: arguments
-      });
-    }
-
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
-        var bytes = Schema.unpack(Schema.bytes(size), buffer, options, offsets);
+        var bytes;
+        if (size === true) { // 自动大小
+          bytes = new Uint8Array(buffer, offsets[0]);
+        } else {
+          bytes = Schema.unpack(Schema.bytes(size), buffer, options, offsets);
+        }
         var byteSize = 0;
         while (bytes[byteSize]) {
           byteSize++;
         }
-        return Schema.unpack(Schema.string(byteSize), bytes, options);
+        var result = Schema.unpack(Schema.string(byteSize), bytes, options);
+        if (size === true) {
+          offsets[0] += byteSize + 1;
+        }
+        return result;
       },
       pack: function _pack(value, options, buffer) {
-        Schema.pack(Schema.bytes(size), Schema.stringBytes(value), options, buffer);
-        Schema.pack('byte', 0, options, buffer);
+        var bytes = [0];
+        [].unshift.apply(bytes, Schema.stringBytes(value));
+        if (size === true) { // 自动大小
+          Schema.pack(Schema.bytes(bytes.length), bytes, options, buffer);
+        } else {
+          Schema.pack(Schema.bytes(size), bytes, options, buffer);
+        }
       },
       namespace: 'cstring',
       args: arguments
     });
   }
-  var cstring = Schema.together(cstringCreator, function (fn, args) {
+  var cstring = Schema.together(cstringCreator, function(fn, args) {
     fn.namespace = 'cstring';
     fn.args = args;
   });

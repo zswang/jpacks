@@ -69,6 +69,7 @@ module.exports = function (Schema) {
    */
   function enumsCreator(map, baseSchema) {
     baseSchema = Schema.from(baseSchema);
+    /*<safe>*/
     if (!baseSchema) {
       throw new Error('Parameter "baseSchema" is undefined.');
     }
@@ -78,6 +79,7 @@ module.exports = function (Schema) {
     if (typeof map !== 'object') {
       throw new Error('Parameter "map" must be a object type.');
     }
+    /*</safe>*/
     if (map instanceof Array) {
       var temp = {};
       map.forEach(function (item, index) {
@@ -113,12 +115,12 @@ module.exports = function (Schema) {
           return true;
         })) {
           throw new Error('Not find enum "' + value + '".');
-        };
+        }
       },
       namespace: 'enums',
       args: arguments
     });
-  };
+  }
 
   var enums = Schema.together(enumsCreator, function (fn, args) {
     fn.namespace = 'enums';

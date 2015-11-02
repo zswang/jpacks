@@ -50,6 +50,11 @@
    * @return {boolean} 返回是否定义成功
    */
   Schema.register = function (name, schema) {
+    /*<safe>*/
+    if (typeof name === 'undefined') {
+      throw new Error('Parameter "name" is undefined.');
+    }
+    /*</safe>*/
     schemas[name] = schema;
     if (!Schema[name]) { // 避免覆盖系统方法
       Schema[name] = schema;
@@ -85,6 +90,11 @@
    * ]]]
    */
   Schema.pushPattern = function (pattern) {
+    /*<safe>*/
+    if (typeof pattern !== 'function') {
+      return;
+    }
+    /*</safe>*/
     schemaPatterns.push(pattern);
   };
   /**
@@ -94,6 +104,11 @@
    * @return {Schema} 返回名字对应的数据结构
    */
   Schema.from = function (schema) {
+    /*<safe>*/
+    if (typeof schema === 'undefined') { // 无效数据
+      return;
+    }
+    /*</safe>*/
     if (schema instanceof Schema) {
       return schema;
     }
@@ -153,6 +168,9 @@
    * @return {Number|Object} 返回解包的值
    */
   function unpack(packSchema, buffer, options, offsets) {
+    /*<debug>
+    console.log('unpack(packSchema: %j, buffer: %j)', packSchema, buffer);
+    //</debug>*/
     var schema = Schema.from(packSchema);
     if (!schema) {
       throw new Error('Parameter schema "' + packSchema + '" is unregister.');
@@ -175,6 +193,9 @@
    * @return {ArrayBuffer}
    */
   function pack(packSchema, data, options, buffer) {
+    /*<debug>
+    console.log('pack(schema: %j)', packSchema);
+    //</debug>*/
     var schema = Schema.from(packSchema);
     if (!schema) {
       throw new Error('Parameter schema "' + packSchema + '" is unregister.');
@@ -476,12 +497,25 @@
    '''</example>'''
    */
   function arrayCreator(itemSchema, count) {
+    /*<safe>*/
+    if (typeof itemSchema === 'undefined') {
+      throw new Error('Parameter "itemSchema" is undefined.');
+    }
+    /*</safe>*/
+    /*<debug>
+    console.log('arrayCreator()', Schema.stringify(itemSchema, count));
+    //</debug>*/
     var size;
     var countSchema;
     if (typeof count === 'number') {
       size = itemSchema.size * count;
     } else {
       countSchema = Schema.from(count);
+      /*<safe>*/
+      if (countSchema.namespace !== 'number') {
+        throw new Error('Parameter "count" is not a numeric type.');
+      }
+      /*</safe>*/
     }
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
@@ -608,6 +642,11 @@
    '''</example>'''
    */
   function objectCreator(objectSchema) {
+    /*<safe>*/
+    if (typeof objectSchema !== 'object') {
+      throw new Error('Parameter "schemas" must be a object type.');
+    }
+    /*</safe>*/
     if (objectSchema instanceof Schema) {
       return objectSchema;
     }
@@ -678,6 +717,14 @@
    '''</example>'''
    */
   function unionCreator(schemas, size) {
+    /*<safe>*/
+    if (typeof schemas !== 'object') {
+      throw new Error('Parameter "schemas" must be a object type.');
+    }
+    if (schemas instanceof Schema) {
+      throw new Error('Parameter "schemas" cannot be a Schema object.');
+    }
+    /*</safe>*/
     var keys = Object.keys(schemas);
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
@@ -776,6 +823,17 @@
    */
   function enumsCreator(map, baseSchema) {
     baseSchema = Schema.from(baseSchema);
+    /*<safe>*/
+    if (!baseSchema) {
+      throw new Error('Parameter "baseSchema" is undefined.');
+    }
+    if (baseSchema.namespace !== 'number') {
+      throw new Error('Parameter "baseSchema" is not a numeric type.');
+    }
+    if (typeof map !== 'object') {
+      throw new Error('Parameter "map" must be a object type.');
+    }
+    /*</safe>*/
     if (map instanceof Array) {
       var temp = {};
       map.forEach(function (item, index) {
@@ -1109,6 +1167,20 @@
    '''</example>'''
   */
   function casesCreator(patterns, value) {
+    /*<safe>*/
+    if (typeof patterns !== 'object') {
+      throw new Error('Parameter "patterns" must be a object type.');
+    }
+    if (patterns instanceof Schema) {
+      throw new Error('Parameter "patterns" cannot be a Schema object.');
+    }
+    if (!(patterns instanceof Array)) {
+      throw new Error('Parameter "patterns" must be a array.');
+    }
+    if (typeof value === 'undefined') {
+      throw new Error('Parameter "value" is undefined.');
+    }
+    /*</safe>*/
     for (var i = 0; i < patterns.length; i++) {
       if (patterns[i][0] === value) {
         return patterns[i][1];
@@ -1156,6 +1228,14 @@
    '''</example>'''
    */
   function dependCreator(field, schemaCreator) {
+    /*<safe>*/
+    if (typeof field !== 'string') {
+      throw new Error('Parameter "field" must be a string.');
+    }
+    if (typeof schemaCreator !== 'function') {
+      throw new Error('Parameter "field" must be a function.');
+    }
+    /*</safe>*/
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
         if (!options.$scope) {
@@ -1216,6 +1296,14 @@
    '''</example>'''
    */
   function parseCreator(encode, decode, dataSchema, size) {
+    /*<safe>*/
+    if (typeof encode !== 'function') {
+      throw new Error('Parameter "compress" must be a function.');
+    }
+    if (typeof decode !== 'function') {
+      throw new Error('Parameter "decompress" must be a function.');
+    }
+    /*</safe>*/
     var schema = Schema.bytes(size);
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {

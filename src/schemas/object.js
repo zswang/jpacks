@@ -15,7 +15,7 @@ module.exports = function (Schema) {
 
     var buffer = _.pack(_schema, ['zswang', 1978]);
     console.log(buffer.join(' '));
-    // -> 6 122 115 119 97 110 103 7 186
+    // -> 6 122 115 119 97 110 103 186 7
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // -> ["zswang",1978]
@@ -37,7 +37,7 @@ module.exports = function (Schema) {
         year: 1978
       });
     console.log(buffer.join(' '));
-    // -> 6 122 115 119 97 110 103 7 186
+    // -> 6 122 115 119 97 110 103 186 7
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // -> {"name":"zswang","year":1978}
@@ -45,9 +45,11 @@ module.exports = function (Schema) {
    '''</example>'''
    */
   function objectCreator(objectSchema) {
+    /*<safe>*/
     if (typeof objectSchema !== 'object') {
       throw new Error('Parameter "schemas" must be a object type.');
     }
+    /*</safe>*/
     if (objectSchema instanceof Schema) {
       return objectSchema;
     }
@@ -74,7 +76,7 @@ module.exports = function (Schema) {
       args: arguments,
       namespace: 'object'
     });
-  };
+  }
   var object = Schema.together(objectCreator, function (fn, args) {
     fn.namespace = 'object';
     fn.args = args;

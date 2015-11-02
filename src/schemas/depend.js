@@ -38,12 +38,14 @@ module.exports = function (Schema) {
    '''</example>'''
    */
   function dependCreator(field, schemaCreator) {
+    /*<safe>*/
     if (typeof field !== 'string') {
       throw new Error('Parameter "field" must be a string.');
     }
     if (typeof schemaCreator !== 'function') {
       throw new Error('Parameter "field" must be a function.');
     }
+    /*</safe>*/
 
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {

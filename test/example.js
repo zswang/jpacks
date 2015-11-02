@@ -27,7 +27,7 @@ describe("./src/schema.js", function () {
     t()('x')()()('y')()()('z');
     assert.equal(printValue, '["x","y","z"]')
   });
-  it("过程注入", function () {
+  it("together():hook", function () {
     var _ = jpacks;
     function f(a, b, c) {}
     var t = _.together(f, function(t, args) {
@@ -108,16 +108,27 @@ describe("./src/schemas/cases.js", function () {
   });
 });
 describe("./src/schemas/cstring.js", function () {
-  it("cstring", function () {
+  it("cstringCreator():base", function () {
     var _ = jpacks;
     var _schema = _.cstring(32);
     print(_.stringify(_schema));
-    assert.equal(printValue, 'cstring')
+    assert.equal(printValue, 'cstring(32)')
     var buffer = _.pack(_schema, 'Hello 你好！');
     print(buffer.join(' '));
-    assert.equal(printValue, '72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0')
-    print(_.unpack(_schema, buffer));
-    assert.equal(printValue, 'Hello 你好！')
+    assert.equal(printValue, '72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0')
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, '"Hello 你好！"')
+  });
+  it("cstringCreator():pchar", function () {
+    var _ = jpacks;
+    var _schema = _.array(_.pchar, 'uint8');
+    print(_.stringify(_schema));
+    assert.equal(printValue, 'array(cstring(true),uint8)')
+    var buffer = _.pack(_schema, ['abc', 'defghijk', 'g']);
+    print(buffer.join(' '));
+    assert.equal(printValue, '3 97 98 99 0 100 101 102 103 104 105 106 107 0 103 0')
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, '["abc","defghijk","g"]')
   });
 });
 describe("./src/schemas/depend.js", function () {
@@ -204,9 +215,9 @@ describe("./src/schemas/number.js", function () {
       float64: 2.94296650666094e+189
     });
     print(buffer.join(' '));
-    assert.equal(printValue, '103 69 35 1 120 86 52 16')
+    assert.equal(printValue, '16 52 86 120 1 35 69 103')
     print(JSON.stringify(_.unpack(_schema, buffer)));
-    assert.equal(printValue, '{"int8":103,"int16":26437,"int32":1732584193,"uint8":103,"uint16":26437,"uint32":1732584193,"float32":9.30951905225494e+23,"float64":2.94296650666094e+189,"shortint":103,"smallint":26437,"longint":1732584193,"byte":103,"word":26437,"longword":1732584193}')
+    assert.equal(printValue, '{"int8":16,"int16":13328,"int32":2018915344,"uint8":16,"uint16":13328,"uint32":2018915344,"float32":1.7378241885569425e+34,"float64":2.94296650666094e+189,"shortint":16,"smallint":13328,"longint":2018915344,"byte":16,"word":13328,"longword":2018915344}')
   });
 });
 describe("./src/schemas/object.js", function () {
@@ -217,7 +228,7 @@ describe("./src/schemas/object.js", function () {
     assert.equal(printValue, 'object([string(uint8),uint16])')
     var buffer = _.pack(_schema, ['zswang', 1978]);
     print(buffer.join(' '));
-    assert.equal(printValue, '6 122 115 119 97 110 103 7 186')
+    assert.equal(printValue, '6 122 115 119 97 110 103 186 7')
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, '["zswang",1978]')
   });
@@ -234,7 +245,7 @@ describe("./src/schemas/object.js", function () {
         year: 1978
       });
     print(buffer.join(' '));
-    assert.equal(printValue, '6 122 115 119 97 110 103 7 186')
+    assert.equal(printValue, '6 122 115 119 97 110 103 186 7')
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, '{"name":"zswang","year":1978}')
   });
@@ -252,7 +263,7 @@ describe("./src/schemas/parse.js", function () {
     assert.equal(printValue, 'parse(_xor,_xor,float64,8)')
     var buffer = _.pack(_schema, 2.94296650666094e+189);
     print(buffer.join(' '));
-    assert.equal(printValue, '24 58 92 126 7 41 75 111')
+    assert.equal(printValue, '111 75 41 7 126 92 58 24')
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, '2.94296650666094e+189')
   });
@@ -277,6 +288,7 @@ describe("./src/schemas/union.js", function () {
     assert.equal(printValue, '{"length":10,"content":"0123456789"}')
   });
 });
+describe("schemas-extend/zlib.js", function () {
   it("gzipCreator():base", function () {
     var _ = jpacks;
     var _schema = _.object({
@@ -305,3 +317,4 @@ describe("./src/schemas/union.js", function () {
     print(buffer.join(' '));
     print(_.unpack(_schema, buffer));
   });
+});

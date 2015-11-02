@@ -15,12 +15,12 @@ function print(value) {
 /*</remove>*/
 
 /*<jdists encoding="jhtmls,regex" pattern="/~/g" replacement="--" data="#files" export="#example">*/
+push('schemas-extend/zlib.js');
 forEach(function (item) {
 !#{'describe("' + item + '", function () {'}
   <!~jdists import="#{item}?example*" /~>
 !#{'});'}
 });
-  <!~jdists import="schemas-extend/zlib.js?example*" /~>
 /*</jdists>*/
 
 <!--jdists export="#pattern">/^\s*\*\s*@example\s*(.*)$/mg</jdists-->

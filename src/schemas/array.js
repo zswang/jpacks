@@ -57,9 +57,11 @@ module.exports = function (Schema) {
    '''</example>'''
    */
   function arrayCreator(itemSchema, count) {
+    /*<safe>*/
     if (typeof itemSchema === 'undefined') {
       throw new Error('Parameter "itemSchema" is undefined.');
     }
+    /*</safe>*/
     /*<debug>
     console.log('arrayCreator()', Schema.stringify(itemSchema, count));
     //</debug>*/
@@ -70,9 +72,11 @@ module.exports = function (Schema) {
       size = itemSchema.size * count;
     } else {
       countSchema = Schema.from(count);
+      /*<safe>*/
       if (countSchema.namespace !== 'number') {
         throw new Error('Parameter "count" is not a numeric type.');
       }
+      /*</safe>*/
     }
 
     return new Schema({
