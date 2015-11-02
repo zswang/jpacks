@@ -6,7 +6,7 @@ module.exports = function(Schema) {
    * @param {Schema|number} size 长度
    * @return {Schema} 返回 C 字符串结构
    '''<example>'''
-   * @example cstring
+   * @example cstringCreator():base
     ```js
     var _ = jpacks;
     var _schema = _.cstring(32);
@@ -21,9 +21,25 @@ module.exports = function(Schema) {
     // -> Hello 你好！
     ```
    '''</example>'''
+   '''<example>'''
+   * @example cstringCreator():pchar
+    ```js
+    var _ = jpacks;
+    var _schema = _array(_.pchar, 'uint8');
+    console.log(_.stringify(_schema));
+    // -> cstring
+
+    var buffer = _.pack(_schema, ['abc', 'defghijk', 'g']);
+    console.log(buffer.join(' '));
+    // -> 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+
+    console.log(_.unpack(_schema, buffer));
+    // -> Hello 你好！
+    ```
+   '''</example>'''
    */
   function cstringCreator(size) {
-    if (size === true) {
+    if (size === true) { // 自动大小
       return new Schema({
         unpack: function _unpack(buffer, options, offsets) {
           var uint8Array = new Uint8Array(buffer, offsets[0]);
@@ -41,9 +57,10 @@ module.exports = function(Schema) {
           Schema.pack('byte', 0, options, buffer);
         },
         namespace: 'cstring',
-        schema: 'cstring'
+        args: arguments
       });
     }
+
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
         var bytes = Schema.unpack(Schema.bytes(size), buffer, options, offsets);
@@ -58,7 +75,7 @@ module.exports = function(Schema) {
         Schema.pack('byte', 0, options, buffer);
       },
       namespace: 'cstring',
-      schema: 'cstring'
+      args: arguments
     });
   }
   var cstring = Schema.together(cstringCreator, function (fn, args) {
