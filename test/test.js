@@ -2,6 +2,9 @@ var assert = require('should');
 var jpacks = require('../.');
 var util = require('util');
 
+var zlib = require('../schemas-extend/zlib');
+zlib(jpacks);
+
 // coverage
 describe('fixtures', function () {
   it('jpacks.cases()', function () {
@@ -46,10 +49,10 @@ describe('fixtures', function () {
     assert.equal(JSON.stringify(value4), JSON.stringify(value3));
   });
   it('jpacks.union()', function () {
-    jpacks.register('UnionShortString', jpacks.union(256, {
+    jpacks.register('UnionShortString', jpacks.union({
       length: jpacks.uint8,
       content: jpacks.shortString
-    }));
+    }, 256));
     var text = '你好世界！Hello';
     var value1 = {
       length: new Buffer(text).length,

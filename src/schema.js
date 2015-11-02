@@ -218,19 +218,117 @@ function createSchema() {
   }
   Schema.pack = pack;
 
+  /**
+   * 凑足参数则调用函数
+   *
+   * @param {Function} fn 任意函数
+   * @param {Array=} args 已经凑到的参数
+   '''<example>'''
+   * @example together():base
+    ```js
+    var _ = jpacks;
+
+    function f(a, b, c) {
+      console.log(JSON.stringify([a, b, c]));
+    }
+    var t = _.together(f);
+
+    t(1)()(2, 3);
+    // -> [1,2,3]
+
+    t(4)(5)()(6);
+    // -> [4,5,6]
+
+    t(7, 8, 9);
+    // -> [7,8,9]
+
+    t('a', 'b')('c');
+    // -> ["a","b","c"]
+
+    t()('x')()()('y')()()('z');
+    // -> ["x","y","z"]
+    ```
+   '''</example>'''
+   '''<example>'''
+   * @example 过程注入
+    ```js
+    var _ = jpacks;
+    function f(a, b, c) {}
+
+    var t = _.together(f, function(t, args) {
+      t.schema = 'f(' + args + ')';
+    });
+    console.log(t(1)(2).schema);
+    // > f(1,2)
+    ```
+   '''</example>'''
+   */
+  function together(fn, hook, args) {
+    if (fn.length <= 0) {
+      return fn;
+    }
+    var result = function() {
+      var list = [];
+      [].push.apply(list, args);
+      [].push.apply(list, arguments);
+      if (list.length >= fn.length) {
+        return fn.apply(null, list);
+      } else {
+        var result = together(fn, hook, list);
+        if (typeof hook === 'function') {
+          hook(result, list);
+        }
+        return result;
+      }
+    };
+    return result;
+  }
+  Schema.together = together;
+
+  var guid = 0;
+
+  /**
+   * 获取对象的结构表达式
+   *
+   * @param {Any} obj 目标对象
+   */
   function stringify(obj) {
+    if (arguments.length > 1) {
+      var result = [];
+      for (var i = 0; i < arguments.length; i++) {
+        result.push(stringify(arguments[i]));
+      }
+      return result.join();
+    }
     function scan(obj) {
+      if (!obj) {
+        return obj;
+      }
+      if (obj.namespace) {
+        if (obj.namespace === 'number') {
+          return obj.name;
+        }
+        if (obj.args) {
+          return obj.namespace + '(' + stringify.apply(null, obj.args) + ')';
+        }
+        return obj.namespace;
+      }
+
+      if (obj.name) {
+        return obj.name;
+      }
+
+      if (typeof obj === 'function') {
+        obj.name = '_pack_fn' + (guid++);
+        Schema.define(obj.name, obj);
+        return obj.name;
+      }
       if (typeof obj === 'object') {
-        if (obj instanceof Schema) {
-          return obj.schema;
-        }        
         var result = new obj.constructor();
         Object.keys(obj).forEach(function (key) {
           result[key] = scan(obj[key]);
         });
         return result;
-      } else if (typeof obj === 'function') {
-        return obj.schema;
       }
       return obj;
     }

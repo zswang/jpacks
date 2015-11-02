@@ -5,15 +5,52 @@ module.exports = function (Schema) {
    *
    * @param {object} schema 数据结构
    * @return {Schema} 返回构建的数据结构
+   '''<example>'''
+   * @example objectCreator:array
+    ```js
+    var _ = jpacks;
+    var _schema = _.object([_.shortString, _.word]);
+    console.log(_.stringify(_schema));
+    // -> object([string(uint8),uint16])
+
+    var buffer = _.pack(_schema, ['zswang', 1978]);
+    console.log(buffer.join(' '));
+    // -> 6 122 115 119 97 110 103 7 186
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> ["zswang",1978]
+    ```
+   '''</example>'''
+   '''<example>'''
+   * @example objectCreator:object
+    ```js
+    var _ = jpacks;
+    var _schema = _.object({
+      name: _.shortString,
+      year: _.word
+    });
+    console.log(_.stringify(_schema));
+    // -> object({namespace:string,args:{0:uint8}})
+
+    var buffer = _.pack(_schema, {
+        name: 'zswang',
+        year: 1978
+      });
+    console.log(buffer.join(' '));
+    // -> 6 122 115 119 97 110 103 7 186
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> {"name":"zswang","year":1978}
+    ```
+   '''</example>'''
    */
-  function object(objectSchema) {
+  function objectCreator(objectSchema) {
     if (typeof objectSchema !== 'object') {
       throw new Error('Parameter "schemas" must be a object type.');
     }
     if (objectSchema instanceof Schema) {
       return objectSchema;
     }
-    var names = Schema.stringify(objectSchema);
     var keys = Object.keys(objectSchema);
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
@@ -34,12 +71,14 @@ module.exports = function (Schema) {
         });
         options.$scope = $scope;
       },
-      object: objectSchema,
-      schema: 'object(' + names + ')',
+      args: arguments,
       namespace: 'object'
     });
   };
-
+  var object = Schema.together(objectCreator, function (fn, args) {
+    fn.namespace = 'object';
+    fn.args = args;
+  });
   Schema.register('object', object);
   Schema.pushPattern(function _objectPattern(schema) {
     if (typeof schema === 'object') {

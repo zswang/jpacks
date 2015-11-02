@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.1.1
+   * @version 0.1.2
    * @date 2015-11-02
    */
   function createSchema() {
@@ -209,19 +209,106 @@
     return buffer;
   }
   Schema.pack = pack;
+  /**
+   * 凑足参数则调用函数
+   *
+   * @param {Function} fn 任意函数
+   * @param {Array=} args 已经凑到的参数
+   '''<example>'''
+   * @example together():base
+    ```js
+    var _ = jpacks;
+    function f(a, b, c) {
+      console.log(JSON.stringify([a, b, c]));
+    }
+    var t = _.together(f);
+    t(1)()(2, 3);
+    // -> [1,2,3]
+    t(4)(5)()(6);
+    // -> [4,5,6]
+    t(7, 8, 9);
+    // -> [7,8,9]
+    t('a', 'b')('c');
+    // -> ["a","b","c"]
+    t()('x')()()('y')()()('z');
+    // -> ["x","y","z"]
+    ```
+   '''</example>'''
+   '''<example>'''
+   * @example 过程注入
+    ```js
+    var _ = jpacks;
+    function f(a, b, c) {}
+    var t = _.together(f, function(t, args) {
+      t.schema = 'f(' + args + ')';
+    });
+    console.log(t(1)(2).schema);
+    // > f(1,2)
+    ```
+   '''</example>'''
+   */
+  function together(fn, hook, args) {
+    if (fn.length <= 0) {
+      return fn;
+    }
+    var result = function() {
+      var list = [];
+      [].push.apply(list, args);
+      [].push.apply(list, arguments);
+      if (list.length >= fn.length) {
+        return fn.apply(null, list);
+      } else {
+        var result = together(fn, hook, list);
+        if (typeof hook === 'function') {
+          hook(result, list);
+        }
+        return result;
+      }
+    };
+    return result;
+  }
+  Schema.together = together;
+  var guid = 0;
+  /**
+   * 获取对象的结构表达式
+   *
+   * @param {Any} obj 目标对象
+   */
   function stringify(obj) {
+    if (arguments.length > 1) {
+      var result = [];
+      for (var i = 0; i < arguments.length; i++) {
+        result.push(stringify(arguments[i]));
+      }
+      return result.join();
+    }
     function scan(obj) {
+      if (!obj) {
+        return obj;
+      }
+      if (obj.namespace) {
+        if (obj.namespace === 'number') {
+          return obj.name;
+        }
+        if (obj.args) {
+          return obj.namespace + '(' + stringify.apply(null, obj.args) + ')';
+        }
+        return obj.namespace;
+      }
+      if (obj.name) {
+        return obj.name;
+      }
+      if (typeof obj === 'function') {
+        obj.name = '_pack_fn' + (guid++);
+        Schema.define(obj.name, obj);
+        return obj.name;
+      }
       if (typeof obj === 'object') {
-        if (obj instanceof Schema) {
-          return obj.schema;
-        }        
         var result = new obj.constructor();
         Object.keys(obj).forEach(function (key) {
           result[key] = scan(obj[key]);
         });
         return result;
-      } else if (typeof obj === 'function') {
-        return obj.schema;
       }
       return obj;
     }
@@ -233,6 +320,11 @@
   };
   return Schema;
 }
+  /**
+   * 创建数据结构作用域
+   *
+   * @return 返回 Schema
+   */
   function create() {
     var Schema = createSchema();
   /**
@@ -244,6 +336,27 @@
    *       @field {string} type 对应 DataView 类型名
    *       @field {number} size 数据大小，单位 byte
    *       @field {Array of string} alias 别名
+   * @example all number
+   '''<example>'''
+    ```js
+    var _ = jpacks;
+    var _map = {};
+    'int8,int16,int32,uint8,uint16,uint32,float32,float64,shortint,smallint,longint,byte,word,longword'.split(/,/).forEach(function (item) {
+      _map[item] = item;
+    });
+    var _schema = _.union(_map, 8);
+    console.log(_.stringify(_schema));
+    // -> union({int8:int8,int16:int16,int32:int32,uint8:uint8,uint16:uint16,uint32:uint32,float32:float32,float64:float64,shortint:shortint,smallint:smallint,longint:longint,byte:byte,word:word,longword:longword},8)
+    var buffer = _.pack(_schema, {
+      float64: 2.94296650666094e+189
+    });
+    console.log(buffer.join(' '));
+    // -> 103 69 35 1 120 86 52 16
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> {"int8":103,"int16":26437,"int32":1732584193,"uint8":103,"uint16":26437,"uint32":1732584193,"float32":9.30951905225494e+23,"float64":2.94296650666094e+189,"shortint":103,"smallint":26437,"longint":1732584193,"byte":103,"word":26437,"longword":1732584193}
+    ```
+   '''</example>'''
+   * @example map is object
    */
   var bases = {
     int8: {
@@ -339,111 +452,114 @@
    * @param {string|Schema} itemSchema 元素类型
    * @param {string|Schema|number=} count 下标类型或个数
    * @return {Schema|Function} 返回数据结构
-   * @example 调用示例 1
+   '''<example>'''
+   * @example arrayCreator():static array
     ```js
     var _ = jpacks;
-    var schema = jpacks.array('int16', 2);
-    console.log(String(schema));
+    var _schema = jpacks.array('int16', 2);
+    console.log(String(_schema));
     // > array(int16,2)
     var value = [12337, 12851];
-    var buffer = jpacks.pack(schema, value);
-    console.log(buffer);
-    // > [48, 49, 50, 51]
-    console.log(jpacks.unpack(schema, buffer));
-    // > [12337, 12851]
+    var buffer = jpacks.pack(_schema, value);
+    console.log(buffer.join(' '));
+    // > 48 49 50 51
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [12337,12851]
     ```
-   * @example 调用示例 2
+   '''</example>'''
+   '''<example>'''
+   * @example arrayCreator():dynamic array
     ```js
     var _ = jpacks;
-    var schema = jpacks.array('int16', 'int8');
-    console.log(String(schema));
+    var _schema = jpacks.array('int16', 'int8');
+    console.log(String(_schema));
     // > array(int16,int8)
     var value = [12337, 12851];
-    var buffer = jpacks.pack(schema, value);
-    console.log(buffer);
-    // > [ 2, 48, 49, 50, 51 ]
-    console.log(jpacks.unpack(schema, buffer));
-    // > [ 12337, 12851 ]
+    var buffer = jpacks.pack(_schema, value);
+    console.log(buffer.join(' '));
+    // > 2 48 49 50 51
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [12337,12851]
     ```
-   * @example 调用示例 3
+   * @example arrayCreator():dynamic array 2
     ```js
     var _ = jpacks;
-    var schema = jpacks.array('int16')(6);
-    console.log(String(schema));
+    var _schema = jpacks.array('int16')(6);
+    console.log(String(_schema));
     // > array(int16,6)
     var value = [12337, 12851];
-    var buffer = jpacks.pack(schema, value);
-    console.log(buffer);
-    // > [ 48, 49, 50, 51, 0, 0, 0, 0, 0, 0, 0, 0 ]
-    console.log(jpacks.unpack(schema, buffer));
-    // > [ 12337, 12851, 0, 0, 0, 0 ]
+    var buffer = jpacks.pack(_schema, value);
+    console.log(buffer.join(' '));
+    // > 48 49 50 51 0 0 0 0 0 0 0 0
+    console.log(JSON.stringify(jpacks.unpack(_schema, buffer)));
+    // > [12337,12851,0,0,0,0]
     ```
-  */
-  function array(itemSchema, count) {
+   '''</example>'''
+   */
+  function arrayCreator(itemSchema, count) {
     if (typeof itemSchema === 'undefined') {
       throw new Error('Parameter "itemSchema" is undefined.');
     }
-    var creatorSchema = function (count) {
-      var size;
-      var countSchema;
-      if (typeof count === 'number') {
-        size = itemSchema.size * count;
-      } else {
-        countSchema = Schema.from(count);
-        if (countSchema.namespace !== 'number') {
-          throw new Error('Parameter "count" is not a numeric type.');
-        }
-      }
-      return new Schema({
-        unpack: function _unpack(buffer, options, offsets) {
-          var length = count;
-          if (countSchema) {
-            length = Schema.unpack(countSchema, buffer, options, offsets);
-          }
-          if (itemSchema.array && options.littleEndian) {
-            size = countSchema.size * length;
-            /* TypeArray littleEndian is true */
-            var offset = offsets[0];
-            offsets[0] += size;
-            return [].slice.apply(new itemSchema.array(buffer, offset, length));
-          }
-          var result = [];
-          for (var i = 0; i < length; i++) {
-            result.push(Schema.unpack(itemSchema, buffer, options, offsets));
-          }
-          return result;
-        },
-        pack: function _pack(value, options, buffer) {
-          var length = count;
-          if (countSchema) {
-            length = value ? value.length : 0;
-            Schema.pack(countSchema, length, options, buffer);
-          }
-          if (itemSchema.array && options.littleEndian) {
-            size = itemSchema.size * length;
-            /* TypeArray littleEndian is true */
-            var arrayBuffer = new ArrayBuffer(size);
-            var typeArray = new itemSchema.array(arrayBuffer);
-            typeArray.set(value);
-            var uint8Array = new Uint8Array(arrayBuffer);
-            [].push.apply(buffer, uint8Array);
-          }
-          for (var i = 0; i < length; i++) {
-            Schema.pack(itemSchema, value[i], options, buffer);
-          }
-        },
-        schema: 'array(' + [Schema.stringify(itemSchema), Schema.stringify(count)] + ')',
-        namespace: 'array',
-        size: size
-      });
-    };
-    creatorSchema.name = 'array(' + itemSchema.name + ')';
-    if (arguments.length === 1) {
-      return creatorSchema;
+    /*<debug>
+    console.log('arrayCreator()', Schema.stringify(itemSchema, count));
+    //</debug>*/
+    var size;
+    var countSchema;
+    if (typeof count === 'number') {
+      size = itemSchema.size * count;
     } else {
-      return creatorSchema(count);
+      countSchema = Schema.from(count);
+      if (countSchema.namespace !== 'number') {
+        throw new Error('Parameter "count" is not a numeric type.');
+      }
     }
-  } 
+    return new Schema({
+      unpack: function _unpack(buffer, options, offsets) {
+        var length = count;
+        if (countSchema) {
+          length = Schema.unpack(countSchema, buffer, options, offsets);
+        }
+        if (itemSchema.array && options.littleEndian) {
+          size = countSchema.size * length;
+          /* TypeArray littleEndian is true */
+          var offset = offsets[0];
+          offsets[0] += size;
+          return [].slice.apply(new itemSchema.array(buffer, offset, length));
+        }
+        var result = [];
+        for (var i = 0; i < length; i++) {
+          result.push(Schema.unpack(itemSchema, buffer, options, offsets));
+        }
+        return result;
+      },
+      pack: function _pack(value, options, buffer) {
+        var length = count;
+        if (countSchema) {
+          length = value ? value.length : 0;
+          Schema.pack(countSchema, length, options, buffer);
+        }
+        if (itemSchema.array && options.littleEndian) {
+          size = itemSchema.size * length;
+          /* TypeArray littleEndian is true */
+          var arrayBuffer = new ArrayBuffer(size);
+          var typeArray = new itemSchema.array(arrayBuffer);
+          typeArray.set(value);
+          var uint8Array = new Uint8Array(arrayBuffer);
+          [].push.apply(buffer, uint8Array);
+        }
+        for (var i = 0; i < length; i++) {
+          Schema.pack(itemSchema, value[i], options, buffer);
+        }
+      },
+      namespace: 'array',
+      args: arguments,
+      size: size
+    });
+  }
+  var array = Schema.together(arrayCreator, function (fn, args) {
+    fn.namespace = 'array';
+    fn.args = args;
+  });
   Schema.register('array', array);
   function shortArray(itemSchema) {
     return array(itemSchema, 'uint8');
@@ -457,6 +573,26 @@
     return array(itemSchema, 'uint32');
   }
   Schema.register('longArray', longArray);
+  /**
+   * 字节数组
+   *
+   * @param {string|Schema|number=} count 下标类型或个数
+   * @return {Schema|Function} 返回数据结构
+   '''<example>'''
+   * @example bytes()
+    ```js
+    var _ = jpacks;
+    var _schema = jpacks.bytes(6);
+    console.log(String(_schema));
+    // > array(uint8,6)
+    var value = [0, 1, 2, 3, 4, 5];
+    var buffer = jpacks.pack(_schema, value);
+    console.log(buffer.join(' '));
+    // > 0 1 2 3 4 5
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [0,1,2,3,4,5]
+    ```
+   */
   function bytes(count) {
     return Schema.array('uint8', count);
   }
@@ -466,15 +602,48 @@
    *
    * @param {object} schema 数据结构
    * @return {Schema} 返回构建的数据结构
+   '''<example>'''
+   * @example objectCreator:array
+    ```js
+    var _ = jpacks;
+    var _schema = _.object([_.shortString, _.word]);
+    console.log(_.stringify(_schema));
+    // -> object([string(uint8),uint16])
+    var buffer = _.pack(_schema, ['zswang', 1978]);
+    console.log(buffer.join(' '));
+    // -> 6 122 115 119 97 110 103 7 186
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> ["zswang",1978]
+    ```
+   '''</example>'''
+   '''<example>'''
+   * @example objectCreator:object
+    ```js
+    var _ = jpacks;
+    var _schema = _.object({
+      name: _.shortString,
+      year: _.word
+    });
+    console.log(_.stringify(_schema));
+    // -> object({namespace:string,args:{0:uint8}})
+    var buffer = _.pack(_schema, {
+        name: 'zswang',
+        year: 1978
+      });
+    console.log(buffer.join(' '));
+    // -> 6 122 115 119 97 110 103 7 186
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> {"name":"zswang","year":1978}
+    ```
+   '''</example>'''
    */
-  function object(objectSchema) {
+  function objectCreator(objectSchema) {
     if (typeof objectSchema !== 'object') {
       throw new Error('Parameter "schemas" must be a object type.');
     }
     if (objectSchema instanceof Schema) {
       return objectSchema;
     }
-    var names = Schema.stringify(objectSchema);
     var keys = Object.keys(objectSchema);
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
@@ -495,11 +664,14 @@
         });
         options.$scope = $scope;
       },
-      object: objectSchema,
-      schema: 'object(' + names + ')',
+      args: arguments,
       namespace: 'object'
     });
   };
+  var object = Schema.together(objectCreator, function (fn, args) {
+    fn.namespace = 'object';
+    fn.args = args;
+  });
   Schema.register('object', object);
   Schema.pushPattern(function _objectPattern(schema) {
     if (typeof schema === 'object') {
@@ -518,32 +690,27 @@
    * @param {number} size 联合类型总大小
    * @param {Object} schema 联合类型中出现的字段
    * @return {Schema} 返回联合类型
-   * @example 调用示例
+   '''<example>'''
+   * @example unionCreator():base
     ```js
     var _ = jpacks;
-    var _schema = _.union(20, {
+    var _schema = _.union({
       length: _.byte,
       content: _.shortString
-    });
-    var ab = _.pack(_schema, {
+    }, 20);
+    console.log(_.stringify(_schema));
+    // -> union({length:uint8,content:string(uint8)},20)
+    var buffer = _.pack(_schema, {
       content: '0123456789'
     });
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [10, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0]
-    console.log(_.unpack(_schema, u8a));
-    // -> Object {length: 10, content: "0123456789"}
+    console.log(buffer.join(' '));
+    // -> 10 48 49 50 51 52 53 54 55 56 57 0 0 0 0 0 0 0 0 0
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> {"length":10,"content":"0123456789"}
     ```
+   '''</example>'''
    */
-  function union(size, schemas) {
-    if (typeof size !== 'number') {
-      var temp = size;
-      size = schemas;
-      schemas = temp;
-    }
-    if (typeof size !== 'number') {
-      throw new Error('Parameter "size" must be a numeric type.');
-    }
+  function unionCreator(schemas, size) {
     if (typeof schemas !== 'object') {
       throw new Error('Parameter "schemas" must be a object type.');
     }
@@ -566,6 +733,9 @@
         var arrayBuffer = new ArrayBuffer(size);
         var uint8Array = new Uint8Array(arrayBuffer);
         keys.forEach(function (key) {
+          if (typeof value[key] === 'undefined') {
+            return;
+          }
           var temp = [];
           Schema.pack(schemas[key], value[key], options, temp);
           uint8Array.set(temp);
@@ -573,10 +743,14 @@
         [].push.apply(buffer, uint8Array);
       },
       size: size,
-      object: schemas,
-      schema: 'union(' + Schema.stringify(size) + ')'
+      args: arguments,
+      namespace: 'union'
     });
   }
+  var union = Schema.together(unionCreator, function (fn, args) {
+    fn.namespace = 'union';
+    fn.args = args;
+  });
   Schema.register('union', union);
   /**
    * 定义一个枚举结构
@@ -584,13 +758,67 @@
    * @param {Schema} baseSchema 枚举结构的基础类型
    * @param {Array|Object} map 枚举类型字典
    * @return {Schema} 返回构建的数据结构
+   '''<example>'''
+   * @example enumsCreator():map is array
+    ```js
+    var _ = jpacks;
+    var _schema = _.enums(['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'], 'uint8');
+    console.log(_.stringify(_schema));
+    // -> enums({Sun:0,Mon:1,Tues:2,Wed:3,Thur:4,Fri:5,Sat:6},uint8)
+    var buffer = _.pack(_schema, 'Tues');
+    console.log(buffer.join(' '));
+    // -> 2
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> "Tues"
+    ```
+   '''</example>'''
+   '''<example>'''
+   * @example enumsCreator():map is object
+    ```js
+    var _ = jpacks;
+    var _schema = _.enums({
+      Unknown: -1,
+      Continue: 100,
+      Processing: 100,
+      OK: 200,
+      Created: 201,
+      NotFound: 404
+    }, 'int8');
+    console.log(_.stringify(_schema));
+    // -> enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
+    var buffer = _.pack(_schema, 'Unknown');
+    console.log(buffer.join(' '));
+    // -> 255
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> "Unknown"
+    ```
+   '''</example>'''
+   '''<example>'''
+   * @example enumsCreator():fault tolerant
+    var _ = jpacks;
+    var _schema = _.enums({
+      Unknown: -1,
+      Continue: 100,
+      Processing: 100,
+      OK: 200,
+      Created: 201,
+      NotFound: 404
+    }, 'int8');
+    console.log(_.stringify(_schema));
+    // -> enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
+    var buffer = _.pack(_schema, 2);
+    console.log(buffer.join(' '));
+    // -> 2
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> 2
+   '''</example>'''
    */
-  function enums(baseSchema, map) {
+  function enumsCreator(map, baseSchema) {
     baseSchema = Schema.from(baseSchema);
     if (!baseSchema) {
       throw new Error('Parameter "baseSchema" is undefined.');
     }
-    if (baseSchema.namespace !== 'base') {
+    if (baseSchema.namespace !== 'number') {
       throw new Error('Parameter "baseSchema" is not a numeric type.');
     }
     if (typeof map !== 'object') {
@@ -615,9 +843,13 @@
           }
           return true;
         });
-        return result;
+        return result || baseValue;
       },
       pack: function _pack(value, options, buffer) {
+        if (typeof value === 'number') {
+          Schema.pack(baseSchema, value, options, buffer);
+          return;
+        }
         if (keys.every(function (key) {
           if (key === value) {
             Schema.pack(baseSchema, map[key], options, buffer);
@@ -628,11 +860,14 @@
           throw new Error('Not find enum "' + value + '".');
         };
       },
-      map: map,
-      schema: 'enum(' + [Schema.stringify(baseSchema), Schema.stringify(map)] + ')',
-      namespace: 'base'
+      namespace: 'enums',
+      args: arguments
     });
   };
+  var enums = Schema.together(enumsCreator, function (fn, args) {
+    fn.namespace = 'enums';
+    fn.args = args;
+  });
   Schema.register('enums', enums);
   /**
    * 对字符串进行 utf8 编码
@@ -680,6 +915,14 @@
    * @param {string} value 字符串内容
    * @param {string=} encoding 编码类型，仅在 NodeJS 下生效，默认 'utf-8'
    * @return {Array} 返回字节数组
+   * @return {Schema} 返回解析类型
+   '''<example>'''
+   * @example stringBytes():base
+    var _ = jpacks;
+    var buffer = _.pack(_.bytes(20), _.stringBytes('你好世界！Hello'));
+    console.log(buffer.join(' '));
+    // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
+   '''<example>'''
    */
   function stringBytes(value, encoding) {
     if (typeof Buffer !== 'undefined') { // NodeJS
@@ -690,14 +933,40 @@
       });
     }
   }
+  Schema.stringBytes = stringBytes;
   /**
    * 声明指定长度的字符串
    *
    * @param {number|string|Schema} size 字节个数下标类型
    * @return {Schema} 返回数据结构
+   '''<example>'''
+   * @example stringCreator():static
+    var _ = jpacks;
+    var _schema = _.string(25);
+    console.log(_.stringify(_schema));
+    // -> string(25)
+    var buffer = _.pack(_schema, '你好世界！Hello');
+    console.log(buffer.join(' '));
+    // -> 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111 0 0 0 0 0
+    console.log(_.unpack(_schema, buffer));
+    // -> 你好世界！Hello
+   '''<example>'''
+   '''<example>'''
+   * @example stringCreator():dynamic
+    var _ = jpacks;
+    var _schema = _.string('int8');
+    console.log(_.stringify(_schema));
+    // -> string('int8')
+    var buffer = _.pack(_schema, '你好世界！Hello');
+    console.log(buffer.join(' '));
+    // -> 20 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
+    console.log(_.unpack(_schema, buffer));
+    // -> 你好世界！Hello
+   '''<example>'''
    */
-  function string(size) {
-    var schema = Schema.array(size, 'uint8');
+  function stringCreator(size) {
+    // console.log('stringCreator', Schema.stringify(size));
+    var schema = Schema.array('uint8', size);
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
         var stringBuffer = Schema.unpack(schema, buffer, options, offsets);
@@ -710,77 +979,92 @@
         Schema.pack(schema, stringBytes(value), options, buffer);
       },
       namespace: 'string',
-      name: 'string(' + Schema.stringify(size) + ')',
-      size: size
+      args: arguments
     });
   }
+  var string = Schema.together(stringCreator, function (fn, args) {
+    fn.namespace = 'string';
+    fn.args = args;
+  });
   Schema.register('string', string);
   /**
    * 短字符串类型
    *
    * @return {Schema} 返回数据结构
-   * @example 调用示例
+   '''<example>'''
+   * @example shortString
     ```js
     var _ = jpacks;
     var _schema = _.shortString;
-    var ab = _.pack(_schema, '你好 World!');
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [13, 228, 189, 160, 229, 165, 189, 32, 87, 111, 114, 108, 100, 33]
-    console.log(_.unpack(_schema, u8a));
-    // -> 你好 World!
+    console.log(_.stringify(_schema));
+    // -> string(uint8)
+    var buffer = _.pack(_schema, 'shortString');
+    console.log(buffer.join(' '));
+    // -> 11 115 104 111 114 116 83 116 114 105 110 103
+    console.log(_.unpack(_schema, buffer));
+    // -> shortString
     ```
+   '''</example>'''
    */
   Schema.register('shortString', string('uint8'));
   /**
    * 长字符串类型
    *
    * @return {Schema} 返回数据结构
-   * @example 调用示例
+   '''<example>'''
+   * @example smallString
     ```js
     var _ = jpacks;
     var _schema = _.smallString;
-    var ab = _.pack(_schema, '你好 World!');
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [0, 13, 228, 189, 160, 229, 165, 189, 32, 87, 111, 114, 108, 100, 33]
-    console.log(_.unpack(_schema, u8a));
-    // -> 你好 World!
+    console.log(_.stringify(_schema));
+    // -> string(uint16)
+    var buffer = _.pack(_schema, 'smallString');
+    console.log(buffer.join(' '));
+    // -> 0 11 115 109 97 108 108 83 116 114 105 110 103
+    console.log(_.unpack(_schema, buffer));
+    // -> smallString
     ```
+   '''</example>'''
    */
   Schema.register('smallString', string('uint16'));
   /**
    * 超长字符串类型
    *
    * @return {Schema} 返回数据结构
-   * @example 调用示例
+   '''<example>'''
+   * @example longString
     ```js
     var _ = jpacks;
     var _schema = _.longString;
-    var ab = _.pack(_schema, '你好 World!');
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [0, 0, 0, 13, 228, 189, 160, 229, 165, 189, 32, 87, 111, 114, 108, 100, 33]
-    console.log(_.unpack(_schema, u8a));
-    // -> 你好 World!
+    console.log(_.stringify(_schema));
+    // -> string(uint32)
+    var buffer = _.pack(_schema, 'longString');
+    console.log(buffer.join(' '));
+    // -> 0 0 0 10 108 111 110 103 83 116 114 105 110 103
+    console.log(_.unpack(_schema, buffer));
+    // -> longString
     ```
+   '''</example>'''
    */
   Schema.register('longString', string('uint32'));
   /**
    * 以零号字符结尾的字符串
    *
    * @type {Schema}
-   * @example 调用示例 1
+   '''<example>'''
+   * @example cstring()
     ```js
     var _ = jpacks;
     var _schema = _.cstring;
-    var ab = _.pack(_schema, 'Hello 你好！');
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [72, 101, 108, 108, 111, 32, 228, 189, 160, 229, 165, 189, 239, 188, 129, 0]
-    console.log(_.unpack(_schema, u8a));
+    console.log(_.stringify(_schema));
+    // -> cstring
+    var buffer = _.pack(_schema, 'Hello 你好！');
+    console.log(buffer.join(' '));
+    // -> 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0
+    console.log(_.unpack(_schema, buffer));
     // -> Hello 你好！
     ```
+   '''</example>'''
      */
   var cstring = new Schema({
     unpack: function _unpack(buffer, options, offsets) {
@@ -808,34 +1092,39 @@
    *
    * @param {Array of array} patterns 数组第一元素表示命中条件，第二位类型
    * @return {Schema} 返回条件类型
-   * @example 调用示例 1
+   '''<example>'''
+   * @example casesCreator
     ```js
     var _ = jpacks;
     var _schema = {
-      name: ['name', _.shortString],
-      age: ['age', _.byte]
+      type: _.shortString,
+      data: _.depend('type', _.cases([
+        ['name', _.shortString],
+        ['age', _.byte]
+      ]))
     };
-    var ab = _.pack(_schema, {
+    console.log(_.stringify(_schema));
+    // -> {type:string(uint8),data:depend(type,cases([[name,string(uint8)],[age,uint8]]))}
+    var buffer = _.pack(_schema, {
       type: 'name',
-      name: 'tom'
+      data: 'tom'
     });
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [4, 110, 97, 109, 101, 3, 116, 111, 109]
-    console.log(_.unpack(_schema, u8a));
-    // -> Object {type: "name", name: "tom"}
-    var ab2 = _.pack(_schema, {
+    console.log(buffer.join(' '));
+    // -> 4 110 97 109 101 3 116 111 109
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> {"type":"name","data":"tom"}
+    var buffer = _.pack(_schema, {
       type: 'age',
-      age: 23
+      data: 23
     });
-    var u8a2 = new Uint8Array(ab2);
-    console.log(u8a2);
-    // -> [3, 97, 103, 101, 23]
-    console.log(_.unpack(_schema, u8a2));
-    // -> Object {type: "age", age: 23}
+    console.log(buffer.join(' '));
+    // -> 3 97 103 101 23
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> {"type":"age","data":23}
     ```
+   '''</example>'''
   */
-  function cases(patterns) {
+  function casesCreator(patterns, value) {
     /*<safe>*/
     if (typeof patterns !== 'object') {
       throw new Error('Parameter "patterns" must be a object type.');
@@ -846,18 +1135,20 @@
     if (!(patterns instanceof Array)) {
       throw new Error('Parameter "patterns" must be a array.');
     }
+    if (typeof value === 'undefined') {
+      throw new Error('Parameter "value" is undefined.');
+    }
     /*</safe>*/
-    var schemaCreator = function (value) {
-      for (var i = 0; i < patterns.length; i++) {
-        if (patterns[i][0] === value) {
-          return patterns[i][1];
-        }
+    for (var i = 0; i < patterns.length; i++) {
+      if (patterns[i][0] === value) {
+        return patterns[i][1];
       }
-    };
-    schemaCreator.schema = 'cases(' + Schema.stringify(patterns) + ')';
-    schemaCreator.namespace = 'cases';
-    return schemaCreator;
+    }
   }
+  var cases = Schema.together(casesCreator, function (fn, args) {
+    fn.namespace = 'cases';
+    fn.args = args;
+  });
   Schema.register('cases', cases);
   /**
    * 声明字段依赖结构
@@ -869,8 +1160,32 @@
    *    @return {Schema} 返回数据结构
    *    function schemaCreator(value) {}
    * ]]]
+   '''<example>'''
+   * @example dependCreator()
+    ```js
+    var _ = jpacks;
+    var _schema = _.object({
+      length1: 'int8',
+      length2: 'int8',
+      data1: _.depend('length1', _.bytes),
+      data2: _.depend('length2', _.array(_.shortString))
+    });
+    console.log(_.stringify(_schema));
+    // -> object({length1:int8,length2:int8,data1:depend(length1,bytes),data2:depend(length2,array(string(uint8)))})
+    var buffer = _.pack(_schema, {
+      length1: 2,
+      length2: 3,
+      data1: [1, 2],
+      data2: ['甲', '乙', '丙']
+    });
+    console.log(buffer.join(' '));
+    // -> 2 3 1 2 3 231 148 178 3 228 185 153 3 228 184 153
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> {"length1":2,"length2":3,"data1":[1,2],"data2":["甲","乙","丙"]}
+    ```
+   '''</example>'''
    */
-  function depend(field, schemaCreator) {
+  function dependCreator(field, schemaCreator) {
     if (typeof field !== 'string') {
       throw new Error('Parameter "field" must be a string.');
     }
@@ -895,15 +1210,73 @@
         }
         Schema.pack(schemaCreator(fieldValue), value, options, buffer);
       },
-      schema: 'depend(' + [field, Schema.stringify(schemaCreator)] + ')',
-      namespace: 'depend'
+      namespace: 'depend',
+      args: arguments
     });
   }
+  var depend = Schema.together(dependCreator, function (fn, args) {
+    fn.namespace = 'depend';
+    fn.args = args;
+  });
   Schema.register('depend', depend);
   function dependArray(field, itemSchema) {
     return depend(field, Schema.array(itemSchema));
   }
   Schema.register('dependArray', dependArray);
+  /**
+   * 构建解析类型，针对大小会改变的数据
+   *
+   * @param {Function} encode 编码器
+   * @param {Function} decode 解码器
+   * @param {string|Schema} 内容数据格式
+   * @param {number|Schema} 大小或大小数据格式
+   * @return {Schema} 返回解析类型
+   '''<example>'''
+   * @example parseCreator():_xor
+    ```js
+    var _ = jpacks;
+    var _xor = function _xor(buffer) {
+      return buffer.slice().map(function (item) {
+        return item ^ 127;
+      });
+    };
+    var _schema = _.parse(_xor, _xor, 'float64', 8);
+    console.log(_.stringify(_schema));
+    // -> parse(_xor,_xor,float64,8)
+    var buffer = _.pack(_schema, 2.94296650666094e+189);
+    console.log(buffer.join(' '));
+    // -> 24 58 92 126 7 41 75 111
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> 2.94296650666094e+189
+    ```
+   '''</example>'''
+   */
+  function parseCreator(encode, decode, dataSchema, size) {
+    if (typeof encode !== 'function') {
+      throw new Error('Parameter "compress" must be a function.');
+    }
+    if (typeof decode !== 'function') {
+      throw new Error('Parameter "decompress" must be a function.');
+    }
+    var schema = Schema.bytes(size);
+    return new Schema({
+      unpack: function _unpack(buffer, options, offsets) {
+        var bytes = decode(Schema.unpack(schema, buffer, options, offsets));
+        return Schema.unpack(dataSchema, bytes, options);
+      },
+      pack: function _pack(value, options, buffer) {
+        var bytes = encode(Schema.pack(dataSchema, value, options));
+        Schema.pack(schema, bytes, options, buffer);
+      },
+      namespace: 'parse',
+      args: arguments
+    });
+  }
+  var parse = Schema.together(parseCreator, function (fn, args) {
+    fn.namespace = 'parse';
+    fn.args = args;
+  });
+  Schema.register('parse', parse);
     return Schema;
   }
   var root = create();

@@ -4,18 +4,22 @@ module.exports = function (Schema) {
    * 以零号字符结尾的字符串
    *
    * @type {Schema}
-   * @example 调用示例 1
+   '''<example>'''
+   * @example cstring()
     ```js
     var _ = jpacks;
     var _schema = _.cstring;
-    var ab = _.pack(_schema, 'Hello 你好！');
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [72, 101, 108, 108, 111, 32, 228, 189, 160, 229, 165, 189, 239, 188, 129, 0]
+    console.log(_.stringify(_schema));
+    // -> cstring
 
-    console.log(_.unpack(_schema, u8a));
+    var buffer = _.pack(_schema, 'Hello 你好！');
+    console.log(buffer.join(' '));
+    // -> 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0
+
+    console.log(_.unpack(_schema, buffer));
     // -> Hello 你好！
     ```
+   '''</example>'''
      */
   var cstring = new Schema({
     unpack: function _unpack(buffer, options, offsets) {

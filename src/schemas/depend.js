@@ -10,8 +10,34 @@ module.exports = function (Schema) {
    *    @return {Schema} 返回数据结构
    *    function schemaCreator(value) {}
    * ]]]
+   '''<example>'''
+   * @example dependCreator()
+    ```js
+    var _ = jpacks;
+    var _schema = _.object({
+      length1: 'int8',
+      length2: 'int8',
+      data1: _.depend('length1', _.bytes),
+      data2: _.depend('length2', _.array(_.shortString))
+    });
+    console.log(_.stringify(_schema));
+    // -> object({length1:int8,length2:int8,data1:depend(length1,bytes),data2:depend(length2,array(string(uint8)))})
+
+    var buffer = _.pack(_schema, {
+      length1: 2,
+      length2: 3,
+      data1: [1, 2],
+      data2: ['甲', '乙', '丙']
+    });
+    console.log(buffer.join(' '));
+    // -> 2 3 1 2 3 231 148 178 3 228 185 153 3 228 184 153
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> {"length1":2,"length2":3,"data1":[1,2],"data2":["甲","乙","丙"]}
+    ```
+   '''</example>'''
    */
-  function depend(field, schemaCreator) {
+  function dependCreator(field, schemaCreator) {
     if (typeof field !== 'string') {
       throw new Error('Parameter "field" must be a string.');
     }
@@ -37,12 +63,16 @@ module.exports = function (Schema) {
         }
         Schema.pack(schemaCreator(fieldValue), value, options, buffer);
       },
-      schema: 'depend(' + [field, Schema.stringify(schemaCreator)] + ')',
-      namespace: 'depend'
+      namespace: 'depend',
+      args: arguments
     });
   }
+  var depend = Schema.together(dependCreator, function (fn, args) {
+    fn.namespace = 'depend';
+    fn.args = args;
+  });
   Schema.register('depend', depend);
-  
+
   function dependArray(field, itemSchema) {
     return depend(field, Schema.array(itemSchema));
   }

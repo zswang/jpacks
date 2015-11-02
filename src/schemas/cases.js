@@ -5,37 +5,41 @@ module.exports = function (Schema) {
    *
    * @param {Array of array} patterns 数组第一元素表示命中条件，第二位类型
    * @return {Schema} 返回条件类型
-   * @example 调用示例 1
+   '''<example>'''
+   * @example casesCreator
     ```js
     var _ = jpacks;
     var _schema = {
-      name: ['name', _.shortString],
-      age: ['age', _.byte]
+      type: _.shortString,
+      data: _.depend('type', _.cases([
+        ['name', _.shortString],
+        ['age', _.byte]
+      ]))
     };
-    var ab = _.pack(_schema, {
+    console.log(_.stringify(_schema));
+    // -> {type:string(uint8),data:depend(type,cases([[name,string(uint8)],[age,uint8]]))}
+
+    var buffer = _.pack(_schema, {
       type: 'name',
-      name: 'tom'
+      data: 'tom'
     });
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [4, 110, 97, 109, 101, 3, 116, 111, 109]
+    console.log(buffer.join(' '));
+    // -> 4 110 97 109 101 3 116 111 109
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> {"type":"name","data":"tom"}
 
-    console.log(_.unpack(_schema, u8a));
-    // -> Object {type: "name", name: "tom"}
-
-    var ab2 = _.pack(_schema, {
+    var buffer = _.pack(_schema, {
       type: 'age',
-      age: 23
+      data: 23
     });
-    var u8a2 = new Uint8Array(ab2);
-    console.log(u8a2);
-    // -> [3, 97, 103, 101, 23]
-
-    console.log(_.unpack(_schema, u8a2));
-    // -> Object {type: "age", age: 23}
+    console.log(buffer.join(' '));
+    // -> 3 97 103 101 23
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> {"type":"age","data":23}
     ```
+   '''</example>'''
   */
-  function cases(patterns) {
+  function casesCreator(patterns, value) {
     /*<safe>*/
     if (typeof patterns !== 'object') {
       throw new Error('Parameter "patterns" must be a object type.');
@@ -46,19 +50,21 @@ module.exports = function (Schema) {
     if (!(patterns instanceof Array)) {
       throw new Error('Parameter "patterns" must be a array.');
     }
+    if (typeof value === 'undefined') {
+      throw new Error('Parameter "value" is undefined.');
+    }
     /*</safe>*/
-    
-    var schemaCreator = function (value) {
-      for (var i = 0; i < patterns.length; i++) {
-        if (patterns[i][0] === value) {
-          return patterns[i][1];
-        }
+
+    for (var i = 0; i < patterns.length; i++) {
+      if (patterns[i][0] === value) {
+        return patterns[i][1];
       }
-    };
-    schemaCreator.schema = 'cases(' + Schema.stringify(patterns) + ')';
-    schemaCreator.namespace = 'cases';
-    return schemaCreator;
+    }
   }
+  var cases = Schema.together(casesCreator, function (fn, args) {
+    fn.namespace = 'cases';
+    fn.args = args;
+  });
   Schema.register('cases', cases);
   /*</define>*/
 };

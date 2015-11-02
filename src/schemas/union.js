@@ -6,34 +6,29 @@ module.exports = function (Schema) {
    * @param {number} size 联合类型总大小
    * @param {Object} schema 联合类型中出现的字段
    * @return {Schema} 返回联合类型
-   * @example 调用示例
+   '''<example>'''
+   * @example unionCreator():base
     ```js
     var _ = jpacks;
-    var _schema = _.union(20, {
+    var _schema = _.union({
       length: _.byte,
       content: _.shortString
-    });
-    var ab = _.pack(_schema, {
+    }, 20);
+    console.log(_.stringify(_schema));
+    // -> union({length:uint8,content:string(uint8)},20)
+
+    var buffer = _.pack(_schema, {
       content: '0123456789'
     });
-    var u8a = new Uint8Array(ab);
-    console.log(u8a);
-    // -> [10, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    console.log(buffer.join(' '));
+    // -> 10 48 49 50 51 52 53 54 55 56 57 0 0 0 0 0 0 0 0 0
 
-    console.log(_.unpack(_schema, u8a));
-    // -> Object {length: 10, content: "0123456789"}
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // -> {"length":10,"content":"0123456789"}
     ```
+   '''</example>'''
    */
-  function union(size, schemas) {
-    if (typeof size !== 'number') {
-      var temp = size;
-      size = schemas;
-      schemas = temp;
-    }
-
-    if (typeof size !== 'number') {
-      throw new Error('Parameter "size" must be a numeric type.');
-    }
+  function unionCreator(schemas, size) {
     if (typeof schemas !== 'object') {
       throw new Error('Parameter "schemas" must be a object type.');
     }
@@ -56,6 +51,9 @@ module.exports = function (Schema) {
         var arrayBuffer = new ArrayBuffer(size);
         var uint8Array = new Uint8Array(arrayBuffer);
         keys.forEach(function (key) {
+          if (typeof value[key] === 'undefined') {
+            return;
+          }
           var temp = [];
           Schema.pack(schemas[key], value[key], options, temp);
           uint8Array.set(temp);
@@ -63,10 +61,14 @@ module.exports = function (Schema) {
         [].push.apply(buffer, uint8Array);
       },
       size: size,
-      object: schemas,
-      schema: 'union(' + Schema.stringify(size) + ')'
+      args: arguments,
+      namespace: 'union'
     });
   }
+  var union = Schema.together(unionCreator, function (fn, args) {
+    fn.namespace = 'union';
+    fn.args = args;
+  });
   Schema.register('union', union);
   /*</define>*/
 };

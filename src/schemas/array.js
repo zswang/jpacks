@@ -6,120 +6,124 @@ module.exports = function (Schema) {
    * @param {string|Schema} itemSchema 元素类型
    * @param {string|Schema|number=} count 下标类型或个数
    * @return {Schema|Function} 返回数据结构
-   * @example 调用示例 1
+   '''<example>'''
+   * @example arrayCreator():static array
     ```js
     var _ = jpacks;
-    var schema = jpacks.array('int16', 2);
-    console.log(String(schema));
+    var _schema = jpacks.array('int16', 2);
+    console.log(String(_schema));
     // > array(int16,2)
 
     var value = [12337, 12851];
-    var buffer = jpacks.pack(schema, value);
-    console.log(buffer);
-    // > [48, 49, 50, 51]
+    var buffer = jpacks.pack(_schema, value);
+    console.log(buffer.join(' '));
+    // > 48 49 50 51
 
-    console.log(jpacks.unpack(schema, buffer));
-    // > [12337, 12851]
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [12337,12851]
     ```
-   * @example 调用示例 2
+   '''</example>'''
+   '''<example>'''
+   * @example arrayCreator():dynamic array
     ```js
     var _ = jpacks;
-    var schema = jpacks.array('int16', 'int8');
-    console.log(String(schema));
+    var _schema = jpacks.array('int16', 'int8');
+    console.log(String(_schema));
     // > array(int16,int8)
 
     var value = [12337, 12851];
-    var buffer = jpacks.pack(schema, value);
-    console.log(buffer);
-    // > [ 2, 48, 49, 50, 51 ]
+    var buffer = jpacks.pack(_schema, value);
+    console.log(buffer.join(' '));
+    // > 2 48 49 50 51
 
-    console.log(jpacks.unpack(schema, buffer));
-    // > [ 12337, 12851 ]
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [12337,12851]
     ```
-   * @example 调用示例 3
+   * @example arrayCreator():dynamic array 2
     ```js
     var _ = jpacks;
-    var schema = jpacks.array('int16')(6);
-    console.log(String(schema));
+    var _schema = jpacks.array('int16')(6);
+    console.log(String(_schema));
     // > array(int16,6)
 
     var value = [12337, 12851];
-    var buffer = jpacks.pack(schema, value);
-    console.log(buffer);
-    // > [ 48, 49, 50, 51, 0, 0, 0, 0, 0, 0, 0, 0 ]
+    var buffer = jpacks.pack(_schema, value);
+    console.log(buffer.join(' '));
+    // > 48 49 50 51 0 0 0 0 0 0 0 0
 
-    console.log(jpacks.unpack(schema, buffer));
-    // > [ 12337, 12851, 0, 0, 0, 0 ]
+    console.log(JSON.stringify(jpacks.unpack(_schema, buffer)));
+    // > [12337,12851,0,0,0,0]
     ```
-  */
-  function array(itemSchema, count) {
+   '''</example>'''
+   */
+  function arrayCreator(itemSchema, count) {
     if (typeof itemSchema === 'undefined') {
       throw new Error('Parameter "itemSchema" is undefined.');
     }
-  
-    var creatorSchema = function (count) {
-      var size;
-      var countSchema;
-      if (typeof count === 'number') {
-        size = itemSchema.size * count;
-      } else {
-        countSchema = Schema.from(count);
-        if (countSchema.namespace !== 'number') {
-          throw new Error('Parameter "count" is not a numeric type.');
-        }
-      }
+    /*<debug>
+    console.log('arrayCreator()', Schema.stringify(itemSchema, count));
+    //</debug>*/
 
-      return new Schema({
-        unpack: function _unpack(buffer, options, offsets) {
-          var length = count;
-          if (countSchema) {
-            length = Schema.unpack(countSchema, buffer, options, offsets);
-          }
-          if (itemSchema.array && options.littleEndian) {
-            size = countSchema.size * length;
-            /* TypeArray littleEndian is true */
-            var offset = offsets[0];
-            offsets[0] += size;
-            return [].slice.apply(new itemSchema.array(buffer, offset, length));
-          }
-          var result = [];
-          for (var i = 0; i < length; i++) {
-            result.push(Schema.unpack(itemSchema, buffer, options, offsets));
-          }
-          return result;
-        },
-        pack: function _pack(value, options, buffer) {
-          var length = count;
-          if (countSchema) {
-            length = value ? value.length : 0;
-            Schema.pack(countSchema, length, options, buffer);
-          }
-          if (itemSchema.array && options.littleEndian) {
-            size = itemSchema.size * length;
-            /* TypeArray littleEndian is true */
-            var arrayBuffer = new ArrayBuffer(size);
-            var typeArray = new itemSchema.array(arrayBuffer);
-            typeArray.set(value);
-            var uint8Array = new Uint8Array(arrayBuffer);
-            [].push.apply(buffer, uint8Array);
-          }
-
-          for (var i = 0; i < length; i++) {
-            Schema.pack(itemSchema, value[i], options, buffer);
-          }
-        },
-        schema: 'array(' + [Schema.stringify(itemSchema), Schema.stringify(count)] + ')',
-        namespace: 'array',
-        size: size
-      });
-    };
-    creatorSchema.name = 'array(' + itemSchema.name + ')';
-    if (arguments.length === 1) {
-      return creatorSchema;
+    var size;
+    var countSchema;
+    if (typeof count === 'number') {
+      size = itemSchema.size * count;
     } else {
-      return creatorSchema(count);
+      countSchema = Schema.from(count);
+      if (countSchema.namespace !== 'number') {
+        throw new Error('Parameter "count" is not a numeric type.');
+      }
     }
-  } 
+
+    return new Schema({
+      unpack: function _unpack(buffer, options, offsets) {
+        var length = count;
+        if (countSchema) {
+          length = Schema.unpack(countSchema, buffer, options, offsets);
+        }
+        if (itemSchema.array && options.littleEndian) {
+          size = countSchema.size * length;
+          /* TypeArray littleEndian is true */
+          var offset = offsets[0];
+          offsets[0] += size;
+          return [].slice.apply(new itemSchema.array(buffer, offset, length));
+        }
+        var result = [];
+        for (var i = 0; i < length; i++) {
+          result.push(Schema.unpack(itemSchema, buffer, options, offsets));
+        }
+        return result;
+      },
+      pack: function _pack(value, options, buffer) {
+        var length = count;
+        if (countSchema) {
+          length = value ? value.length : 0;
+          Schema.pack(countSchema, length, options, buffer);
+        }
+        if (itemSchema.array && options.littleEndian) {
+          size = itemSchema.size * length;
+          /* TypeArray littleEndian is true */
+          var arrayBuffer = new ArrayBuffer(size);
+          var typeArray = new itemSchema.array(arrayBuffer);
+          typeArray.set(value);
+          var uint8Array = new Uint8Array(arrayBuffer);
+          [].push.apply(buffer, uint8Array);
+        }
+
+        for (var i = 0; i < length; i++) {
+          Schema.pack(itemSchema, value[i], options, buffer);
+        }
+      },
+      namespace: 'array',
+      args: arguments,
+      size: size
+    });
+  }
+
+  var array = Schema.together(arrayCreator, function (fn, args) {
+    fn.namespace = 'array';
+    fn.args = args;
+  });
   Schema.register('array', array);
   function shortArray(itemSchema) {
     return array(itemSchema, 'uint8');
