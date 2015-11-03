@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.3.0
+   * @version 0.3.1
    * @date 2015-11-03
    */
   function createSchema() {
@@ -60,6 +60,10 @@
       Schema[name] = schema;
     }
   };
+  /**
+   * register 别名
+   */
+  Schema.def = Schema.register;
   /**
    * 匹配数据结构的方法集合
    *

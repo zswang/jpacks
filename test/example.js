@@ -11,7 +11,7 @@ function print(value) {
 jpacks.setDefaultOptions({
   browser: true
 });
-  require('.././schemas-extend/int64')(jpacks);
+  require('.././schemas-extend/bigint')(jpacks);
   require('.././schemas-extend/zlib')(jpacks);
 describe("./src/jpacks.js", function () {
 });
@@ -296,39 +296,66 @@ describe("./src/schemas/union.js", function () {
     assert.equal(printValue, '{"length":10,"content":"0123456789"}'); printValue = undefined;
   });
 });
-describe("./schemas-extend/int64.js", function () {
-  it("int64():string", function () {
+describe("./schemas-extend/bigint.js", function () {
+  it("uint64():string", function () {
     var _ = jpacks;
-    var _schema = _.int64;
+    var _schema = _.uint64;
     print(_.stringify(_schema))
-    assert.equal(printValue, 'int64'); printValue = undefined;
+    assert.equal(printValue, 'uint64'); printValue = undefined;
     var buffer = _.pack(_schema, '1609531171697315243');
     print(buffer.join(' '));
     assert.equal(printValue, '171 205 239 175 18 52 86 22'); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, '"1609531171697315243"'); printValue = undefined;
   });
-  it("int64():number", function () {
+  it("uint64():number", function () {
     var _ = jpacks;
-    var _schema = _.int64;
+    var _schema = _.uint64;
     print(_.stringify(_schema))
-    assert.equal(printValue, 'int64'); printValue = undefined;
+    assert.equal(printValue, 'uint64'); printValue = undefined;
     var buffer = _.pack(_schema, 171697315);
     print(buffer.join(' '));
     assert.equal(printValue, '163 228 59 10 0 0 0 0'); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, '"171697315"'); printValue = undefined;
   });
-  it("int64():littleEndian = false;", function () {
+  it("uint64():littleEndian = false;", function () {
     var _ = jpacks;
-    var _schema = _.int64;
+    var _schema = _.uint64;
     print(_.stringify(_schema))
-    assert.equal(printValue, 'int64'); printValue = undefined;
+    assert.equal(printValue, 'uint64'); printValue = undefined;
     var buffer = _.pack(_schema, 171697315, { littleEndian: false });
     print(buffer.join(' '));
     assert.equal(printValue, '0 0 0 0 10 59 228 163'); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
     assert.equal(printValue, '"171697315"'); printValue = undefined;
+  });
+  it("int64():-1,-2", function () {
+    var _ = jpacks;
+    var _schema = _.int64;
+    print(_.stringify(_schema))
+    assert.equal(printValue, 'int64'); printValue = undefined;
+    var buffer = _.pack(_schema, '-1');
+    print(buffer.join(' '));
+    assert.equal(printValue, '255 255 255 255 255 255 255 255'); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, '"-1"'); printValue = undefined;
+    var buffer = _.pack(_schema, '-2');
+    print(buffer.join(' '));
+    assert.equal(printValue, '254 255 255 255 255 255 255 255'); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, '"-2"'); printValue = undefined;
+  });
+  it("int64():-2, littleEndian = false", function () {
+    var _ = jpacks;
+    var _schema = _.int64;
+    print(_.stringify(_schema))
+    assert.equal(printValue, 'int64'); printValue = undefined;
+    var buffer = _.pack(_schema, -2, { littleEndian: false });
+    print(buffer.join(' '));
+    assert.equal(printValue, '255 255 255 255 255 255 255 254'); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
+    assert.equal(printValue, '"-2"'); printValue = undefined;
   });
 });
 describe("./schemas-extend/zlib.js", function () {

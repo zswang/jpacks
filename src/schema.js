@@ -54,6 +54,10 @@ function createSchema() {
       Schema[name] = schema;
     }
   };
+  /**
+   * register 别名
+   */
+  Schema.def = Schema.register;
 
   /**
    * 匹配数据结构的方法集合
