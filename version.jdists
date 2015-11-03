@@ -1,0 +1,13 @@
+/*<jdists encoding='jhtmls' data='package.json' export='package.json'>*/
+version = version.replace(/\d+$/, function (value) {
+  return parseInt(value) + 1;
+});
+!#{JSON.stringify(this, null, '  ')}
+/*</jdists>*/
+
+/*<jdists encoding='jhtmls' data='package.json' export='#version'>#{version}</jdists>*/
+
+/*<jdists encoding='jhtmls' data='bower.json' export='bower.json'>*/
+version = '<!--jdists import="#version" /-->';
+!#{JSON.stringify(this, null, '  ')}
+/*</jdists>*/

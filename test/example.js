@@ -14,8 +14,10 @@ jpacks.setDefaultOptions({
   require('.././schemas-extend/bigint')(jpacks);
   require('.././schemas-extend/zlib')(jpacks);
 describe("./src/jpacks.js", function () {
+  printValue = undefined;
 });
 describe("./src/schema.js", function () {
+  printValue = undefined;
   it("together():base", function () {
     var _ = jpacks;
     function f(a, b, c) {
@@ -44,6 +46,7 @@ describe("./src/schema.js", function () {
   });
 });
 describe("./src/schemas/array.js", function () {
+  printValue = undefined;
   it("arrayCreator():static array", function () {
     var _ = jpacks;
     var _schema = jpacks.array('int16', 2);
@@ -82,8 +85,10 @@ describe("./src/schemas/array.js", function () {
   });
 });
 describe("./src/schemas/bytes.js", function () {
+  printValue = undefined;
 });
 describe("./src/schemas/cases.js", function () {
+  printValue = undefined;
   it("casesCreator", function () {
     var _ = jpacks;
     var _schema = {
@@ -114,6 +119,7 @@ describe("./src/schemas/cases.js", function () {
   });
 });
 describe("./src/schemas/cstring.js", function () {
+  printValue = undefined;
   it("cstringCreator():base", function () {
     var _ = jpacks;
     var _schema = _.cstring(32);
@@ -138,6 +144,7 @@ describe("./src/schemas/cstring.js", function () {
   });
 });
 describe("./src/schemas/depend.js", function () {
+  printValue = undefined;
   it("dependCreator()", function () {
     var _ = jpacks;
     var _schema = _.object({
@@ -161,6 +168,7 @@ describe("./src/schemas/depend.js", function () {
   });
 });
 describe("./src/schemas/enums.js", function () {
+  printValue = undefined;
   it("enumsCreator():map is array", function () {
     var _ = jpacks;
     var _schema = _.enums(['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'], 'uint8');
@@ -209,6 +217,7 @@ describe("./src/schemas/enums.js", function () {
     assert.equal(printValue, '2'); printValue = undefined;
 });
 describe("./src/schemas/number.js", function () {
+  printValue = undefined;
     var _ = jpacks;
     var _map = {
       bytes: _.bytes(8)
@@ -229,6 +238,7 @@ describe("./src/schemas/number.js", function () {
   });
 });
 describe("./src/schemas/object.js", function () {
+  printValue = undefined;
   it("objectCreator:array", function () {
     var _ = jpacks;
     var _schema = _.object([_.shortString, _.word]);
@@ -259,6 +269,7 @@ describe("./src/schemas/object.js", function () {
   });
 });
 describe("./src/schemas/parse.js", function () {
+  printValue = undefined;
   it("parseCreator():_xor", function () {
     var _ = jpacks;
     var _xor = function _xor(buffer) {
@@ -277,8 +288,10 @@ describe("./src/schemas/parse.js", function () {
   });
 });
 describe("./src/schemas/string.js", function () {
+  printValue = undefined;
 });
 describe("./src/schemas/union.js", function () {
+  printValue = undefined;
   it("unionCreator():base", function () {
     var _ = jpacks;
     var _schema = _.union({
@@ -297,6 +310,7 @@ describe("./src/schemas/union.js", function () {
   });
 });
 describe("./schemas-extend/bigint.js", function () {
+  printValue = undefined;
   it("uint64():string", function () {
     var _ = jpacks;
     var _schema = _.uint64;
@@ -359,6 +373,7 @@ describe("./schemas-extend/bigint.js", function () {
   });
 });
 describe("./schemas-extend/zlib.js", function () {
+  printValue = undefined;
   it("gzipCreator():base", function () {
     var _ = jpacks;
     var _schema = _.object({
@@ -372,7 +387,7 @@ describe("./schemas-extend/zlib.js", function () {
       data: '你好世界！Hello'
     });
     print(buffer.join(' '));
-    assert.equal(printValue, '2 42 0 31 139 8 0 0 0 0 0 0 11 19 121 178 119 193 211 165 123 159 236 152 246 124 106 207 251 61 141 30 169 57 57 249 0 183 181 133 147 21 0 0 0'); printValue = undefined;
+    assert.equal(printValue, '2 42 0 31 139 8 0 0 0 0 0 0 3 19 121 178 119 193 211 165 123 159 236 152 246 124 106 207 251 61 141 30 169 57 57 249 0 183 181 133 147 21 0 0 0'); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, '{"type":2,"data":"你好世界！Hello"}'); printValue = undefined;
   });
