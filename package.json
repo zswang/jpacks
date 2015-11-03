@@ -2,7 +2,7 @@
   "name": "jpacks",
   "title": "c struct packer",
   "description": "Binary data packing and unpacking.",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "homepage": "http://github.com/zswang/jpacks",
   "main": "jpacks.js",
   "author": {
@@ -25,6 +25,9 @@
   },
   "license": "MIT",
   "readmeFilename": "README.md",
+  "dependencies": {
+    "jints": "^0.0.3"
+  },
   "devDependencies": {
     "mocha": "^2.0.1",
     "istanbul": "^0.3.17",
@@ -40,7 +43,7 @@
 
     "example": "jdists example.jdists.js -o test/example.js",
     "test": "istanbul cover --hook-run-in-context node_modules/mocha/bin/_mocha -- -R spec",
-    "mocha": "mocha",
+    "mocha": "jdists example.jdists.js -o test/example.js && mocha",
     "dist": "npm run example && npm run _dist_dev && npm run _dist && npm run _compress && npm run test",
     "lint": "jshint src/**/*.js src/*.js *.json"
   },

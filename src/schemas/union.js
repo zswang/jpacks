@@ -15,16 +15,16 @@ module.exports = function (Schema) {
       content: _.shortString
     }, 20);
     console.log(_.stringify(_schema));
-    // -> union({length:uint8,content:string(uint8)},20)
+    // > union({length:uint8,content:string(uint8)},20)
 
     var buffer = _.pack(_schema, {
       content: '0123456789'
     });
     console.log(buffer.join(' '));
-    // -> 10 48 49 50 51 52 53 54 55 56 57 0 0 0 0 0 0 0 0 0
+    // > 10 48 49 50 51 52 53 54 55 56 57 0 0 0 0 0 0 0 0 0
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"length":10,"content":"0123456789"}
+    // > {"length":10,"content":"0123456789"}
     ```
    '''</example>'''
    */

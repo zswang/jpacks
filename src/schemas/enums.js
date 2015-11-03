@@ -12,14 +12,14 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = _.enums(['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'], 'uint8');
     console.log(_.stringify(_schema));
-    // -> enums({Sun:0,Mon:1,Tues:2,Wed:3,Thur:4,Fri:5,Sat:6},uint8)
+    // > enums({Sun:0,Mon:1,Tues:2,Wed:3,Thur:4,Fri:5,Sat:6},uint8)
 
     var buffer = _.pack(_schema, 'Tues');
     console.log(buffer.join(' '));
-    // -> 2
+    // > 2
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> "Tues"
+    // > "Tues"
     ```
    '''</example>'''
    '''<example>'''
@@ -35,14 +35,14 @@ module.exports = function (Schema) {
       NotFound: 404
     }, 'int8');
     console.log(_.stringify(_schema));
-    // -> enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
+    // > enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
 
     var buffer = _.pack(_schema, 'Unknown');
     console.log(buffer.join(' '));
-    // -> 255
+    // > 255
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> "Unknown"
+    // > "Unknown"
     ```
    '''</example>'''
    '''<example>'''
@@ -57,14 +57,14 @@ module.exports = function (Schema) {
       NotFound: 404
     }, 'int8');
     console.log(_.stringify(_schema));
-    // -> enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
+    // > enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
 
     var buffer = _.pack(_schema, 2);
     console.log(buffer.join(' '));
-    // -> 2
+    // > 2
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> 2
+    // > 2
    '''</example>'''
    */
   function enumsCreator(map, baseSchema) {

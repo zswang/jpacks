@@ -44,7 +44,7 @@ module.exports = function (Schema) {
    * 将字符串转换为字节数组
    *
    * @param {string} value 字符串内容
-   * @param {string=} encoding 编码类型，仅在 NodeJS 下生效，默认 'utf-8'
+   * @param {string=} options.encoding 编码类型，仅在 NodeJS 下生效，默认 'utf-8'
    * @return {Array} 返回字节数组
    * @return {Schema} 返回解析类型
    '''<example>'''
@@ -56,9 +56,9 @@ module.exports = function (Schema) {
     // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
    '''<example>'''
    */
-  function stringBytes(value, encoding) {
-    if (typeof Buffer !== 'undefined') { // NodeJS
-      return new Buffer(value, encoding);
+  function stringBytes(value, options) {
+    if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
+      return new Buffer(value, options.encoding);
     } else {
       return encodeUTF8(value).split('').map(function (item) {
         return item.charCodeAt();
@@ -77,28 +77,28 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = _.string(25);
     console.log(_.stringify(_schema));
-    // -> string(25)
+    // > string(25)
 
     var buffer = _.pack(_schema, '你好世界！Hello');
     console.log(buffer.join(' '));
 
-    // -> 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111 0 0 0 0 0
+    // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111 0 0 0 0 0
     console.log(_.unpack(_schema, buffer));
-    // -> 你好世界！Hello
+    // > 你好世界！Hello
    '''<example>'''
    '''<example>'''
    * @example stringCreator():dynamic
     var _ = jpacks;
     var _schema = _.string('int8');
     console.log(_.stringify(_schema));
-    // -> string('int8')
+    // > string('int8')
 
     var buffer = _.pack(_schema, '你好世界！Hello');
     console.log(buffer.join(' '));
 
-    // -> 20 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
+    // > 20 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
     console.log(_.unpack(_schema, buffer));
-    // -> 你好世界！Hello
+    // > 你好世界！Hello
    '''<example>'''
    */
   function stringCreator(size) {
@@ -107,13 +107,13 @@ module.exports = function (Schema) {
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
         var stringBuffer = Schema.unpack(schema, buffer, options, offsets);
-        if (typeof Buffer !== 'undefined') { // NodeJS
-          return new Buffer(stringBuffer).toString();
+        if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
+          return new Buffer(stringBuffer).toString(options.encoding);
         }
         return decodeUTF8(String.fromCharCode.apply(String, stringBuffer));
       },
       pack: function _pack(value, options, buffer) {
-        Schema.pack(schema, stringBytes(value), options, buffer);
+        Schema.pack(schema, stringBytes(value, options), options, buffer);
       },
       namespace: 'string',
       args: arguments
@@ -135,14 +135,14 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = _.shortString;
     console.log(_.stringify(_schema));
-    // -> string(uint8)
+    // > string(uint8)
 
     var buffer = _.pack(_schema, 'shortString');
     console.log(buffer.join(' '));
 
-    // -> 11 115 104 111 114 116 83 116 114 105 110 103
+    // > 11 115 104 111 114 116 83 116 114 105 110 103
     console.log(_.unpack(_schema, buffer));
-    // -> shortString
+    // > shortString
     ```
    '''</example>'''
    */
@@ -157,14 +157,14 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = _.smallString;
     console.log(_.stringify(_schema));
-    // -> string(uint16)
+    // > string(uint16)
 
     var buffer = _.pack(_schema, 'smallString');
     console.log(buffer.join(' '));
-    // -> 0 11 115 109 97 108 108 83 116 114 105 110 103
+    // > 0 11 115 109 97 108 108 83 116 114 105 110 103
 
     console.log(_.unpack(_schema, buffer));
-    // -> smallString
+    // > smallString
     ```
    '''</example>'''
    */
@@ -179,13 +179,13 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = _.longString;
     console.log(_.stringify(_schema));
-    // -> string(uint32)
+    // > string(uint32)
 
     var buffer = _.pack(_schema, 'longString');
     console.log(buffer.join(' '));
-    // -> 0 0 0 10 108 111 110 103 83 116 114 105 110 103
+    // > 0 0 0 10 108 111 110 103 83 116 114 105 110 103
     console.log(_.unpack(_schema, buffer));
-    // -> longString
+    // > longString
     ```
    '''</example>'''
    */

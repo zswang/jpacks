@@ -21,7 +21,7 @@ module.exports = function (Schema) {
       data2: _.depend('length2', _.array(_.shortString))
     });
     console.log(_.stringify(_schema));
-    // -> object({length1:int8,length2:int8,data1:depend(length1,bytes),data2:depend(length2,array(string(uint8)))})
+    // > object({length1:int8,length2:int8,data1:depend(length1,bytes),data2:depend(length2,array(string(uint8)))})
 
     var buffer = _.pack(_schema, {
       length1: 2,
@@ -30,10 +30,10 @@ module.exports = function (Schema) {
       data2: ['甲', '乙', '丙']
     });
     console.log(buffer.join(' '));
-    // -> 2 3 1 2 3 231 148 178 3 228 185 153 3 228 184 153
+    // > 2 3 1 2 3 231 148 178 3 228 185 153 3 228 184 153
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"length1":2,"length2":3,"data1":[1,2],"data2":["甲","乙","丙"]}
+    // > {"length1":2,"length2":3,"data1":[1,2],"data2":["甲","乙","丙"]}
     ```
    '''</example>'''
    */

@@ -11,14 +11,14 @@ module.exports = function(Schema) {
     var _ = jpacks;
     var _schema = _.cstring(32);
     console.log(_.stringify(_schema));
-    // -> cstring(32)
+    // > cstring(32)
 
     var buffer = _.pack(_schema, 'Hello 你好！');
     console.log(buffer.join(' '));
-    // -> 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    // > 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> "Hello 你好！"
+    // > "Hello 你好！"
     ```
    '''</example>'''
    '''<example>'''
@@ -27,14 +27,14 @@ module.exports = function(Schema) {
     var _ = jpacks;
     var _schema = _.array(_.pchar, 'uint8');
     console.log(_.stringify(_schema));
-    // -> array(cstring(true),uint8)
+    // > array(cstring(true),uint8)
 
     var buffer = _.pack(_schema, ['abc', 'defghijk', 'g']);
     console.log(buffer.join(' '));
-    // -> 3 97 98 99 0 100 101 102 103 104 105 106 107 0 103 0
+    // > 3 97 98 99 0 100 101 102 103 104 105 106 107 0 103 0
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> ["abc","defghijk","g"]
+    // > ["abc","defghijk","g"]
     ```
    '''</example>'''
    */
@@ -59,7 +59,7 @@ module.exports = function(Schema) {
       },
       pack: function _pack(value, options, buffer) {
         var bytes = [0];
-        [].unshift.apply(bytes, Schema.stringBytes(value));
+        [].unshift.apply(bytes, Schema.stringBytes(value, options));
         if (size === true) { // 自动大小
           Schema.pack(Schema.bytes(bytes.length), bytes, options, buffer);
         } else {

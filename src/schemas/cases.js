@@ -17,25 +17,25 @@ module.exports = function (Schema) {
       ]))
     };
     console.log(_.stringify(_schema));
-    // -> {type:string(uint8),data:depend(type,cases([[name,string(uint8)],[age,uint8]]))}
+    // > {type:string(uint8),data:depend(type,cases([[name,string(uint8)],[age,uint8]]))}
 
     var buffer = _.pack(_schema, {
       type: 'name',
       data: 'tom'
     });
     console.log(buffer.join(' '));
-    // -> 4 110 97 109 101 3 116 111 109
+    // > 4 110 97 109 101 3 116 111 109
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"type":"name","data":"tom"}
+    // > {"type":"name","data":"tom"}
 
     var buffer = _.pack(_schema, {
       type: 'age',
       data: 23
     });
     console.log(buffer.join(' '));
-    // -> 3 97 103 101 23
+    // > 3 97 103 101 23
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"type":"age","data":23}
+    // > {"type":"age","data":23}
     ```
    '''</example>'''
   */

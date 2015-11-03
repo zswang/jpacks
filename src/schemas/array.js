@@ -17,7 +17,7 @@ module.exports = function (Schema) {
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
     console.log(buffer.join(' '));
-    // > 48 49 50 51
+    // > 49 48 51 50
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [12337,12851]
@@ -34,7 +34,7 @@ module.exports = function (Schema) {
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
     console.log(buffer.join(' '));
-    // > 2 48 49 50 51
+    // > 2 49 48 51 50
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [12337,12851]
@@ -49,7 +49,7 @@ module.exports = function (Schema) {
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
     console.log(buffer.join(' '));
-    // > 48 49 50 51 0 0 0 0 0 0 0 0
+    // > 49 48 51 50 0 0 0 0 0 0 0 0
 
     console.log(JSON.stringify(jpacks.unpack(_schema, buffer)));
     // > [12337,12851,0,0,0,0]

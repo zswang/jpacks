@@ -132,17 +132,22 @@ function createSchema() {
    *
    * @type {boolean}
    */
-  var defaultLittleEndian = true;
+  var defaultOptions = {
+    littleEndian: true
+  };
 
   /**
-   * 设置默认低字节序
+   * 设置默认配置
    *
-   * @param {boolean} value 默认值
+   * @param {boolean} options 默认值
    */
-  function setDefaultLittleEndian(value) {
-    defaultLittleEndian = value;
+  function setDefaultOptions(options) {
+    options = options || {};
+    Object.keys(options).forEach(function (key) {
+      defaultOptions[key] = options[key];
+    });
   }
-  Schema.setDefaultLittleEndian = setDefaultLittleEndian;
+  Schema.setDefaultOptions = setDefaultOptions;
 
   /**
    * 确保是 ArrayBuffer 类型
@@ -181,9 +186,11 @@ function createSchema() {
     buffer = arrayBufferFrom(buffer); // 确保是 ArrayBuffer 类型
     options = options || {};
     offsets = offsets || [0];
-    if (typeof options.littleEndian === 'undefined') {
-      options.littleEndian = defaultLittleEndian;
-    }
+    Object.keys(defaultOptions).forEach(function (key) {
+      if (typeof options[key] === 'undefined') {
+        options[key] = defaultOptions[key];
+      }
+    });
     return schema.unpack(buffer, options, offsets); // 解码
   }
   Schema.unpack = unpack;
@@ -209,9 +216,11 @@ function createSchema() {
     buffer = buffer || [];
 
     options = options || {};
-    if (typeof options.littleEndian === 'undefined') {
-      options.littleEndian = defaultLittleEndian;
-    }
+    Object.keys(defaultOptions).forEach(function (key) {
+      if (typeof options[key] === 'undefined') {
+        options[key] = defaultOptions[key];
+      }
+    });
     schema.pack(data, options, buffer);
 
     return buffer;
@@ -259,7 +268,7 @@ function createSchema() {
       t.schema = 'f(' + args + ')';
     });
     console.log(t(1)(2).schema);
-    // > f(1,2)
+    // -> f(1,2)
     ```
    '''</example>'''
    */

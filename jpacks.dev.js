@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.2.1
+   * @version 0.3.0
    * @date 2015-11-03
    */
   function createSchema() {
@@ -133,16 +133,21 @@
    *
    * @type {boolean}
    */
-  var defaultLittleEndian = true;
+  var defaultOptions = {
+    littleEndian: true
+  };
   /**
-   * 设置默认低字节序
+   * 设置默认配置
    *
-   * @param {boolean} value 默认值
+   * @param {boolean} options 默认值
    */
-  function setDefaultLittleEndian(value) {
-    defaultLittleEndian = value;
+  function setDefaultOptions(options) {
+    options = options || {};
+    Object.keys(options).forEach(function (key) {
+      defaultOptions[key] = options[key];
+    });
   }
-  Schema.setDefaultLittleEndian = setDefaultLittleEndian;
+  Schema.setDefaultOptions = setDefaultOptions;
   /**
    * 确保是 ArrayBuffer 类型
    *
@@ -178,9 +183,11 @@
     buffer = arrayBufferFrom(buffer); // 确保是 ArrayBuffer 类型
     options = options || {};
     offsets = offsets || [0];
-    if (typeof options.littleEndian === 'undefined') {
-      options.littleEndian = defaultLittleEndian;
-    }
+    Object.keys(defaultOptions).forEach(function (key) {
+      if (typeof options[key] === 'undefined') {
+        options[key] = defaultOptions[key];
+      }
+    });
     return schema.unpack(buffer, options, offsets); // 解码
   }
   Schema.unpack = unpack;
@@ -202,9 +209,11 @@
     }
     buffer = buffer || [];
     options = options || {};
-    if (typeof options.littleEndian === 'undefined') {
-      options.littleEndian = defaultLittleEndian;
-    }
+    Object.keys(defaultOptions).forEach(function (key) {
+      if (typeof options[key] === 'undefined') {
+        options[key] = defaultOptions[key];
+      }
+    });
     schema.pack(data, options, buffer);
     return buffer;
   }
@@ -243,7 +252,7 @@
       t.schema = 'f(' + args + ')';
     });
     console.log(t(1)(2).schema);
-    // > f(1,2)
+    // -> f(1,2)
     ```
    '''</example>'''
    */
@@ -340,20 +349,22 @@
    '''<example>'''
     ```js
     var _ = jpacks;
-    var _map = {};
+    var _map = {
+      bytes: _.bytes(8)
+    };
     'int8,int16,int32,uint8,uint16,uint32,float32,float64,shortint,smallint,longint,byte,word,longword'.split(/,/).forEach(function (item) {
       _map[item] = item;
     });
     var _schema = _.union(_map, 8);
     console.log(_.stringify(_schema));
-    // -> union({int8:int8,int16:int16,int32:int32,uint8:uint8,uint16:uint16,uint32:uint32,float32:float32,float64:float64,shortint:shortint,smallint:smallint,longint:longint,byte:byte,word:word,longword:longword},8)
+    // > union({bytes:array(uint8,8),int8:int8,int16:int16,int32:int32,uint8:uint8,uint16:uint16,uint32:uint32,float32:float32,float64:float64,shortint:shortint,smallint:smallint,longint:longint,byte:byte,word:word,longword:longword},8)
     var buffer = _.pack(_schema, {
-      float64: 2.94296650666094e+189
+      bytes: [0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89]
     });
     console.log(buffer.join(' '));
-    // -> 16 52 86 120 1 35 69 103
+    // > 18 35 52 69 86 103 120 137
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"int8":16,"int16":13328,"int32":2018915344,"uint8":16,"uint16":13328,"uint32":2018915344,"float32":1.7378241885569425e+34,"float64":2.94296650666094e+189,"shortint":16,"smallint":13328,"longint":2018915344,"byte":16,"word":13328,"longword":2018915344}
+    // > {"bytes":[18,35,52,69,86,103,120,137],"int8":18,"int16":8978,"int32":1161044754,"uint8":18,"uint16":8978,"uint32":1161044754,"float32":2882.19189453125,"float64":-4.843717058781651e-263,"shortint":18,"smallint":8978,"longint":1161044754,"byte":18,"word":8978,"longword":1161044754}
     ```
    '''</example>'''
    * @example map is object
@@ -462,7 +473,7 @@
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
     console.log(buffer.join(' '));
-    // > 48 49 50 51
+    // > 49 48 51 50
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [12337,12851]
     ```
@@ -477,7 +488,7 @@
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
     console.log(buffer.join(' '));
-    // > 2 48 49 50 51
+    // > 2 49 48 51 50
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [12337,12851]
     ```
@@ -490,7 +501,7 @@
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
     console.log(buffer.join(' '));
-    // > 48 49 50 51 0 0 0 0 0 0 0 0
+    // > 49 48 51 50 0 0 0 0 0 0 0 0
     console.log(JSON.stringify(jpacks.unpack(_schema, buffer)));
     // > [12337,12851,0,0,0,0]
     ```
@@ -612,12 +623,12 @@
     var _ = jpacks;
     var _schema = _.object([_.shortString, _.word]);
     console.log(_.stringify(_schema));
-    // -> object([string(uint8),uint16])
+    // > object([string(uint8),uint16])
     var buffer = _.pack(_schema, ['zswang', 1978]);
     console.log(buffer.join(' '));
-    // -> 6 122 115 119 97 110 103 186 7
+    // > 6 122 115 119 97 110 103 186 7
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> ["zswang",1978]
+    // > ["zswang",1978]
     ```
    '''</example>'''
    '''<example>'''
@@ -629,15 +640,15 @@
       year: _.word
     });
     console.log(_.stringify(_schema));
-    // -> object({namespace:string,args:{0:uint8}})
+    // > object({namespace:string,args:{0:uint8}})
     var buffer = _.pack(_schema, {
         name: 'zswang',
         year: 1978
       });
     console.log(buffer.join(' '));
-    // -> 6 122 115 119 97 110 103 186 7
+    // > 6 122 115 119 97 110 103 186 7
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"name":"zswang","year":1978}
+    // > {"name":"zswang","year":1978}
     ```
    '''</example>'''
    */
@@ -705,14 +716,14 @@
       content: _.shortString
     }, 20);
     console.log(_.stringify(_schema));
-    // -> union({length:uint8,content:string(uint8)},20)
+    // > union({length:uint8,content:string(uint8)},20)
     var buffer = _.pack(_schema, {
       content: '0123456789'
     });
     console.log(buffer.join(' '));
-    // -> 10 48 49 50 51 52 53 54 55 56 57 0 0 0 0 0 0 0 0 0
+    // > 10 48 49 50 51 52 53 54 55 56 57 0 0 0 0 0 0 0 0 0
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"length":10,"content":"0123456789"}
+    // > {"length":10,"content":"0123456789"}
     ```
    '''</example>'''
    */
@@ -772,12 +783,12 @@
     var _ = jpacks;
     var _schema = _.enums(['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'], 'uint8');
     console.log(_.stringify(_schema));
-    // -> enums({Sun:0,Mon:1,Tues:2,Wed:3,Thur:4,Fri:5,Sat:6},uint8)
+    // > enums({Sun:0,Mon:1,Tues:2,Wed:3,Thur:4,Fri:5,Sat:6},uint8)
     var buffer = _.pack(_schema, 'Tues');
     console.log(buffer.join(' '));
-    // -> 2
+    // > 2
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> "Tues"
+    // > "Tues"
     ```
    '''</example>'''
    '''<example>'''
@@ -793,12 +804,12 @@
       NotFound: 404
     }, 'int8');
     console.log(_.stringify(_schema));
-    // -> enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
+    // > enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
     var buffer = _.pack(_schema, 'Unknown');
     console.log(buffer.join(' '));
-    // -> 255
+    // > 255
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> "Unknown"
+    // > "Unknown"
     ```
    '''</example>'''
    '''<example>'''
@@ -813,12 +824,12 @@
       NotFound: 404
     }, 'int8');
     console.log(_.stringify(_schema));
-    // -> enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
+    // > enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
     var buffer = _.pack(_schema, 2);
     console.log(buffer.join(' '));
-    // -> 2
+    // > 2
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> 2
+    // > 2
    '''</example>'''
    */
   function enumsCreator(map, baseSchema) {
@@ -923,7 +934,7 @@
    * 将字符串转换为字节数组
    *
    * @param {string} value 字符串内容
-   * @param {string=} encoding 编码类型，仅在 NodeJS 下生效，默认 'utf-8'
+   * @param {string=} options.encoding 编码类型，仅在 NodeJS 下生效，默认 'utf-8'
    * @return {Array} 返回字节数组
    * @return {Schema} 返回解析类型
    '''<example>'''
@@ -934,9 +945,9 @@
     // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
    '''<example>'''
    */
-  function stringBytes(value, encoding) {
-    if (typeof Buffer !== 'undefined') { // NodeJS
-      return new Buffer(value, encoding);
+  function stringBytes(value, options) {
+    if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
+      return new Buffer(value, options.encoding);
     } else {
       return encodeUTF8(value).split('').map(function (item) {
         return item.charCodeAt();
@@ -954,24 +965,24 @@
     var _ = jpacks;
     var _schema = _.string(25);
     console.log(_.stringify(_schema));
-    // -> string(25)
+    // > string(25)
     var buffer = _.pack(_schema, '你好世界！Hello');
     console.log(buffer.join(' '));
-    // -> 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111 0 0 0 0 0
+    // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111 0 0 0 0 0
     console.log(_.unpack(_schema, buffer));
-    // -> 你好世界！Hello
+    // > 你好世界！Hello
    '''<example>'''
    '''<example>'''
    * @example stringCreator():dynamic
     var _ = jpacks;
     var _schema = _.string('int8');
     console.log(_.stringify(_schema));
-    // -> string('int8')
+    // > string('int8')
     var buffer = _.pack(_schema, '你好世界！Hello');
     console.log(buffer.join(' '));
-    // -> 20 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
+    // > 20 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
     console.log(_.unpack(_schema, buffer));
-    // -> 你好世界！Hello
+    // > 你好世界！Hello
    '''<example>'''
    */
   function stringCreator(size) {
@@ -980,13 +991,13 @@
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
         var stringBuffer = Schema.unpack(schema, buffer, options, offsets);
-        if (typeof Buffer !== 'undefined') { // NodeJS
-          return new Buffer(stringBuffer).toString();
+        if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
+          return new Buffer(stringBuffer).toString(options.encoding);
         }
         return decodeUTF8(String.fromCharCode.apply(String, stringBuffer));
       },
       pack: function _pack(value, options, buffer) {
-        Schema.pack(schema, stringBytes(value), options, buffer);
+        Schema.pack(schema, stringBytes(value, options), options, buffer);
       },
       namespace: 'string',
       args: arguments
@@ -1007,12 +1018,12 @@
     var _ = jpacks;
     var _schema = _.shortString;
     console.log(_.stringify(_schema));
-    // -> string(uint8)
+    // > string(uint8)
     var buffer = _.pack(_schema, 'shortString');
     console.log(buffer.join(' '));
-    // -> 11 115 104 111 114 116 83 116 114 105 110 103
+    // > 11 115 104 111 114 116 83 116 114 105 110 103
     console.log(_.unpack(_schema, buffer));
-    // -> shortString
+    // > shortString
     ```
    '''</example>'''
    */
@@ -1027,12 +1038,12 @@
     var _ = jpacks;
     var _schema = _.smallString;
     console.log(_.stringify(_schema));
-    // -> string(uint16)
+    // > string(uint16)
     var buffer = _.pack(_schema, 'smallString');
     console.log(buffer.join(' '));
-    // -> 0 11 115 109 97 108 108 83 116 114 105 110 103
+    // > 0 11 115 109 97 108 108 83 116 114 105 110 103
     console.log(_.unpack(_schema, buffer));
-    // -> smallString
+    // > smallString
     ```
    '''</example>'''
    */
@@ -1047,12 +1058,12 @@
     var _ = jpacks;
     var _schema = _.longString;
     console.log(_.stringify(_schema));
-    // -> string(uint32)
+    // > string(uint32)
     var buffer = _.pack(_schema, 'longString');
     console.log(buffer.join(' '));
-    // -> 0 0 0 10 108 111 110 103 83 116 114 105 110 103
+    // > 0 0 0 10 108 111 110 103 83 116 114 105 110 103
     console.log(_.unpack(_schema, buffer));
-    // -> longString
+    // > longString
     ```
    '''</example>'''
    */
@@ -1068,12 +1079,12 @@
     var _ = jpacks;
     var _schema = _.cstring(32);
     console.log(_.stringify(_schema));
-    // -> cstring(32)
+    // > cstring(32)
     var buffer = _.pack(_schema, 'Hello 你好！');
     console.log(buffer.join(' '));
-    // -> 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+    // > 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> "Hello 你好！"
+    // > "Hello 你好！"
     ```
    '''</example>'''
    '''<example>'''
@@ -1082,12 +1093,12 @@
     var _ = jpacks;
     var _schema = _.array(_.pchar, 'uint8');
     console.log(_.stringify(_schema));
-    // -> array(cstring(true),uint8)
+    // > array(cstring(true),uint8)
     var buffer = _.pack(_schema, ['abc', 'defghijk', 'g']);
     console.log(buffer.join(' '));
-    // -> 3 97 98 99 0 100 101 102 103 104 105 106 107 0 103 0
+    // > 3 97 98 99 0 100 101 102 103 104 105 106 107 0 103 0
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> ["abc","defghijk","g"]
+    // > ["abc","defghijk","g"]
     ```
    '''</example>'''
    */
@@ -1112,7 +1123,7 @@
       },
       pack: function _pack(value, options, buffer) {
         var bytes = [0];
-        [].unshift.apply(bytes, Schema.stringBytes(value));
+        [].unshift.apply(bytes, Schema.stringBytes(value, options));
         if (size === true) { // 自动大小
           Schema.pack(Schema.bytes(bytes.length), bytes, options, buffer);
         } else {
@@ -1146,23 +1157,23 @@
       ]))
     };
     console.log(_.stringify(_schema));
-    // -> {type:string(uint8),data:depend(type,cases([[name,string(uint8)],[age,uint8]]))}
+    // > {type:string(uint8),data:depend(type,cases([[name,string(uint8)],[age,uint8]]))}
     var buffer = _.pack(_schema, {
       type: 'name',
       data: 'tom'
     });
     console.log(buffer.join(' '));
-    // -> 4 110 97 109 101 3 116 111 109
+    // > 4 110 97 109 101 3 116 111 109
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"type":"name","data":"tom"}
+    // > {"type":"name","data":"tom"}
     var buffer = _.pack(_schema, {
       type: 'age',
       data: 23
     });
     console.log(buffer.join(' '));
-    // -> 3 97 103 101 23
+    // > 3 97 103 101 23
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"type":"age","data":23}
+    // > {"type":"age","data":23}
     ```
    '''</example>'''
   */
@@ -1213,7 +1224,7 @@
       data2: _.depend('length2', _.array(_.shortString))
     });
     console.log(_.stringify(_schema));
-    // -> object({length1:int8,length2:int8,data1:depend(length1,bytes),data2:depend(length2,array(string(uint8)))})
+    // > object({length1:int8,length2:int8,data1:depend(length1,bytes),data2:depend(length2,array(string(uint8)))})
     var buffer = _.pack(_schema, {
       length1: 2,
       length2: 3,
@@ -1221,9 +1232,9 @@
       data2: ['甲', '乙', '丙']
     });
     console.log(buffer.join(' '));
-    // -> 2 3 1 2 3 231 148 178 3 228 185 153 3 228 184 153
+    // > 2 3 1 2 3 231 148 178 3 228 185 153 3 228 184 153
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"length1":2,"length2":3,"data1":[1,2],"data2":["甲","乙","丙"]}
+    // > {"length1":2,"length2":3,"data1":[1,2],"data2":["甲","乙","丙"]}
     ```
    '''</example>'''
    */
@@ -1286,12 +1297,12 @@
     };
     var _schema = _.parse(_xor, _xor, 'float64', 8);
     console.log(_.stringify(_schema));
-    // -> parse(_xor,_xor,float64,8)
+    // > parse(_xor,_xor,float64,8)
     var buffer = _.pack(_schema, 2.94296650666094e+189);
     console.log(buffer.join(' '));
-    // -> 111 75 41 7 126 92 58 24
+    // > 111 75 41 7 126 92 58 24
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> 2.94296650666094e+189
+    // > 2.94296650666094e+189
     ```
    '''</example>'''
    */

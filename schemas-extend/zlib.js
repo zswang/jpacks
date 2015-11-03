@@ -16,6 +16,7 @@ module.exports = function(Schema) {
       data: _.gzip(_.shortString, 'uint16')
     });
     console.log(_.stringify(_schema))
+    // > object({type:uint8,data:parse(zlib.gzipSync,zlib.gunzipSync,string(uint8),uint16)})
 
     var buffer = _.pack(_schema, {
       type: 2,
@@ -23,7 +24,10 @@ module.exports = function(Schema) {
     });
 
     console.log(buffer.join(' '));
-    console.log(_.unpack(_schema, buffer));
+    // > 2 42 0 31 139 8 0 0 0 0 0 0 11 19 121 178 119 193 211 165 123 159 236 152 246 124 106 207 251 61 141 30 169 57 57 249 0 183 181 133 147 21 0 0 0
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"type":2,"data":"你好世界！Hello"}
     ```
    '''</example>'''
    */
@@ -59,6 +63,7 @@ module.exports = function(Schema) {
       data: _.inflate(_.shortString, 'uint16')
     });
     console.log(_.stringify(_schema))
+    // > object({type:uint8,data:parse(zlib.deflateSync,zlib.inflateSync,string(uint8),uint16)})
 
     var buffer = _.pack(_schema, {
       type: 2,
@@ -66,7 +71,10 @@ module.exports = function(Schema) {
     });
 
     console.log(buffer.join(' '));
-    console.log(_.unpack(_schema, buffer));
+    // > 2 30 0 120 156 19 121 178 119 193 211 165 123 159 236 152 246 124 106 207 251 61 141 30 169 57 57 249 0 152 20 12 247
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"type":2,"data":"你好世界！Hello"}
     ```
    '''</example>'''
    */

@@ -13,22 +13,24 @@ module.exports = function defineNumber(Schema) {
    '''<example>'''
     ```js
     var _ = jpacks;
-    var _map = {};
+    var _map = {
+      bytes: _.bytes(8)
+    };
     'int8,int16,int32,uint8,uint16,uint32,float32,float64,shortint,smallint,longint,byte,word,longword'.split(/,/).forEach(function (item) {
       _map[item] = item;
     });
     var _schema = _.union(_map, 8);
     console.log(_.stringify(_schema));
-    // -> union({int8:int8,int16:int16,int32:int32,uint8:uint8,uint16:uint16,uint32:uint32,float32:float32,float64:float64,shortint:shortint,smallint:smallint,longint:longint,byte:byte,word:word,longword:longword},8)
+    // > union({bytes:array(uint8,8),int8:int8,int16:int16,int32:int32,uint8:uint8,uint16:uint16,uint32:uint32,float32:float32,float64:float64,shortint:shortint,smallint:smallint,longint:longint,byte:byte,word:word,longword:longword},8)
 
     var buffer = _.pack(_schema, {
-      float64: 2.94296650666094e+189
+      bytes: [0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89]
     });
     console.log(buffer.join(' '));
-    // -> 16 52 86 120 1 35 69 103
+    // > 18 35 52 69 86 103 120 137
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"int8":16,"int16":13328,"int32":2018915344,"uint8":16,"uint16":13328,"uint32":2018915344,"float32":1.7378241885569425e+34,"float64":2.94296650666094e+189,"shortint":16,"smallint":13328,"longint":2018915344,"byte":16,"word":13328,"longword":2018915344}
+    // > {"bytes":[18,35,52,69,86,103,120,137],"int8":18,"int16":8978,"int32":1161044754,"uint8":18,"uint16":8978,"uint32":1161044754,"float32":2882.19189453125,"float64":-4.843717058781651e-263,"shortint":18,"smallint":8978,"longint":1161044754,"byte":18,"word":8978,"longword":1161044754}
     ```
    '''</example>'''
    * @example map is object

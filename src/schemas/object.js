@@ -11,14 +11,14 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = _.object([_.shortString, _.word]);
     console.log(_.stringify(_schema));
-    // -> object([string(uint8),uint16])
+    // > object([string(uint8),uint16])
 
     var buffer = _.pack(_schema, ['zswang', 1978]);
     console.log(buffer.join(' '));
-    // -> 6 122 115 119 97 110 103 186 7
+    // > 6 122 115 119 97 110 103 186 7
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> ["zswang",1978]
+    // > ["zswang",1978]
     ```
    '''</example>'''
    '''<example>'''
@@ -30,17 +30,17 @@ module.exports = function (Schema) {
       year: _.word
     });
     console.log(_.stringify(_schema));
-    // -> object({namespace:string,args:{0:uint8}})
+    // > object({namespace:string,args:{0:uint8}})
 
     var buffer = _.pack(_schema, {
         name: 'zswang',
         year: 1978
       });
     console.log(buffer.join(' '));
-    // -> 6 122 115 119 97 110 103 186 7
+    // > 6 122 115 119 97 110 103 186 7
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // -> {"name":"zswang","year":1978}
+    // > {"name":"zswang","year":1978}
     ```
    '''</example>'''
    */
