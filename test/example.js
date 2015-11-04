@@ -434,6 +434,27 @@ describe("./schemas-extend/protobuf.js", function () {
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, '[{"int64":"-192377746236123"},{"uint64":"192377746236123"}]'); printValue = undefined;
   });
+  it("protobufCreator():bytesAsString", function () {
+    var _ = jpacks;
+    var _schema = _.array(
+      _.protobuf('test/protoify/string.proto', 'str.Value', 'uint16'),
+      'int8'
+    );
+    print(_.stringify(_schema))
+    assert.equal(printValue, 'array(protobuf(test/protoify/string.proto,str.Value,uint16),int8)'); printValue = undefined;
+    _.setDefaultOptions({
+      protobuf_bytesAsString: true
+    });
+    var buffer = _.pack(_schema, [{
+      string: "Hello World!你好世界!"
+    }, {
+      bytes: "你好世界!Hello World!"
+    }]);
+    print(buffer.join(' '));
+    assert.equal(printValue, '2 27 0 10 25 72 101 108 108 111 32 87 111 114 108 100 33 228 189 160 229 165 189 228 184 150 231 149 140 33 27 0 18 25 228 189 160 229 165 189 228 184 150 231 149 140 33 72 101 108 108 111 32 87 111 114 108 100 33'); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, '[{"string":"Hello World!你好世界!"},{"bytes":"你好世界!Hello World!"}]'); printValue = undefined;
+  });
 });
 describe("./schemas-extend/zlib.js", function () {
   printValue = undefined;

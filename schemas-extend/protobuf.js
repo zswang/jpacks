@@ -8,7 +8,7 @@ module.exports = function(Schema) {
    * @param {Message of class} messager protobuf 数据类型
    * @param {Object} json JSON 数据
    */
-  function protoify(messager, json) {
+  function protoify(messager, json, options) {
     if (!messager) {
       throw new Error('messager is undefined.');
     }
@@ -25,6 +25,15 @@ module.exports = function(Schema) {
         return;
       }
       var value = json[key];
+      if (type.type.name === 'bytes') {
+        if (value instanceof Array) {
+          result[key] = new Buffer(value);
+          return;
+        } else if (typeof value === 'string') {
+          result[key] = new Buffer(Schema.stringBytes(value, options));
+          return;
+        }
+      }
 
       if (!type.resolvedType) { // 基础类型
         result[key] = value;
@@ -35,11 +44,11 @@ module.exports = function(Schema) {
         var items = [];
         value = value || [];
         for (var i = 0; i < value.length; i++) {
-          items.push(protoify(type.resolvedType.clazz, value[i]));
+          items.push(protoify(type.resolvedType.clazz, value[i], options));
         }
         result[key] = items;
       } else {
-        result[key] = protoify(type.resolvedType.clazz, json[key]);
+        result[key] = protoify(type.resolvedType.clazz, json[key], options);
       }
     });
     return new messager(result);
@@ -51,11 +60,7 @@ module.exports = function(Schema) {
    * @param {Message of class} messager protobuf 数据类型
    * @param {Object} json JSON 数据
    */
-  function jsonify(messager, json) {
-    if (arguments.length === 1) {
-      json = messager.toRaw(false, true);
-      messager = messager.$type.clazz;
-    }
+  function jsonify(messager, json, options) {
     if (!json) {
       return;
     }
@@ -79,16 +84,24 @@ module.exports = function(Schema) {
         delete json[key];
         return;
       }
+      if (type.type.name === 'bytes') {
+        if (options.protobuf_bytesAsString) {
+          json[key] = Schema.unpack(Schema.string(value.length), value, options);
+        } else {
+          json[key] = Schema.unpack(Schema.bytes(value.length), value, options);
+        }
+        return;
+      }
       if (!type.resolvedType) { // 基础类型
         return;
       }
       if (type.repeated) { // 数组类型
         value = value || [];
         for (var i = 0; i < value.length; i++) {
-          jsonify(type.resolvedType.clazz, value[i]);
+          jsonify(type.resolvedType.clazz, value[i], options);
         }
       } else {
-        jsonify(type.resolvedType.clazz, json[key]);
+        jsonify(type.resolvedType.clazz, json[key], options);
       }
     });
     return json;
@@ -156,6 +169,32 @@ module.exports = function(Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [{"int64":"-192377746236123"},{"uint64":"192377746236123"}]
     ```
+   * @example protobufCreator():bytesAsString
+    ```js
+    var _ = jpacks;
+    var _schema = _.array(
+      _.protobuf('test/protoify/string.proto', 'str.Value', 'uint16'),
+      'int8'
+    );
+    console.log(_.stringify(_schema))
+    // > array(protobuf(test/protoify/string.proto,str.Value,uint16),int8)
+
+    _.setDefaultOptions({
+      protobuf_bytesAsString: true
+    });
+
+    var buffer = _.pack(_schema, [{
+      string: "Hello World!你好世界!"
+    }, {
+      bytes: "你好世界!Hello World!"
+    }]);
+
+    console.log(buffer.join(' '));
+    // > 2 27 0 10 25 72 101 108 108 111 32 87 111 114 108 100 33 228 189 160 229 165 189 228 184 150 231 149 140 33 27 0 18 25 228 189 160 229 165 189 228 184 150 231 149 140 33 72 101 108 108 111 32 87 111 114 108 100 33
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [{"string":"Hello World!你好世界!"},{"bytes":"你好世界!Hello World!"}]
+    ```
    '''</example>'''
    */
   function protobufCreator(filename, messagepath, size) {
@@ -169,13 +208,13 @@ module.exports = function(Schema) {
         if (calculate <= 0) {
           return null;
         }
-        return jsonify(rs);
+        return jsonify(messager, rs.toRaw(false, true), options);
       },
       pack: function _pack(value, options, buffer) {
         if (!value) {
           return;
         }
-        var message = protoify(messager, value);
+        var message = protoify(messager, value, options);
         var uint8Array = new Uint8Array(message.toArrayBuffer());
         Schema.pack(Schema.bytes(size), uint8Array, options, buffer);
       },

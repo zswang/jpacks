@@ -1,0 +1,8 @@
+package str;
+
+message Value {
+	oneof type {
+		string string = 1;
+		bytes bytes = 2;
+	}
+}
