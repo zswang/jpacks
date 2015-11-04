@@ -1,0 +1,8 @@
+package bigint;
+
+message Value {
+	oneof type {
+		int64 int64 = 1;
+		uint64 uint64 = 2;
+	}
+}

@@ -111,9 +111,8 @@ module.exports = function (Schema) {
           var uint8Array = new Uint8Array(arrayBuffer);
           [].push.apply(buffer, uint8Array);
         }
-
         for (var i = 0; i < length; i++) {
-          Schema.pack(itemSchema, value[i], options, buffer);
+          Schema.pack(itemSchema, (value || [])[i], options, buffer);
         }
       },
       namespace: 'array',

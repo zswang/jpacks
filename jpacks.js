@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.3.4
+   * @version 0.3.8
    * @date 2015-11-04
    */
   function createSchema() {
@@ -529,7 +529,7 @@
           [].push.apply(buffer, uint8Array);
         }
         for (var i = 0; i < length; i++) {
-          Schema.pack(itemSchema, value[i], options, buffer);
+          Schema.pack(itemSchema, (value || [])[i], options, buffer);
         }
       },
       namespace: 'array',

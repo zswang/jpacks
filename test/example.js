@@ -390,11 +390,11 @@ describe("./schemas-extend/protobuf.js", function () {
   it("protobufCreator():base", function () {
     var _ = jpacks;
     var _schema = _.array(
-      _.protobuf('test/protoify/json.proto', 'js', 'Value'),
+      _.protobuf('test/protoify/json.proto', 'js.Value', 'uint16'),
       'int8'
     );
     print(_.stringify(_schema))
-    assert.equal(printValue, 'array(protobuf(test/protoify/json.proto,js,Value),int8)'); printValue = undefined;
+    assert.equal(printValue, 'array(protobuf(test/protoify/json.proto,js.Value,uint16),int8)'); printValue = undefined;
     var buffer = _.pack(_schema, [{
       integer: 123
     }, {
@@ -412,9 +412,27 @@ describe("./schemas-extend/protobuf.js", function () {
       }
     }]);
     print(buffer.join(' '));
-    assert.equal(printValue, '2 8 246 1 58 31 10 6 26 4 110 97 109 101 10 6 26 4 121 101 97 114 18 8 26 6 122 115 119 97 110 103 18 3 8 190 31'); printValue = undefined;
+    assert.equal(printValue, '2 3 0 8 246 1 33 0 58 31 10 6 26 4 110 97 109 101 10 6 26 4 121 101 97 114 18 8 26 6 122 115 119 97 110 103 18 3 8 190 31'); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer)));
-    assert.equal(printValue, '[{"type":"object","object":{"keys":[{"type":"string","string":"name"},{"type":"string","string":"year"}],"values":[{"type":"string","string":"zswang"},{"type":"integer","integer":2015}]}},{"type":"integer","integer":2015}]'); printValue = undefined;
+    assert.equal(printValue, '[{"integer":123},{"object":{"keys":[{"string":"name"},{"string":"year"}],"values":[{"string":"zswang"},{"integer":2015}]}}]'); printValue = undefined;
+  });
+  it("protobufCreator():bigint", function () {
+    var _ = jpacks;
+    var _schema = _.array(
+      _.protobuf('test/protoify/bigint.proto', 'bigint.Value', 'uint16'),
+      'int8'
+    );
+    print(_.stringify(_schema))
+    assert.equal(printValue, 'array(protobuf(test/protoify/bigint.proto,bigint.Value,uint16),int8)'); printValue = undefined;
+    var buffer = _.pack(_schema, [{
+      int64: "-192377746236123"
+    }, {
+      uint64: "192377746236123"
+    }]);
+    print(buffer.join(' '));
+    assert.equal(printValue, '2 11 0 8 165 186 151 134 137 161 212 255 255 1 8 0 16 219 197 232 249 246 222 43'); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, '[{"int64":"-192377746236123"},{"uint64":"192377746236123"}]'); printValue = undefined;
   });
 });
 describe("./schemas-extend/zlib.js", function () {

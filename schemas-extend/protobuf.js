@@ -21,8 +21,11 @@ module.exports = function(Schema) {
       if (!type) {
         return;
       }
-
+      if (typeof type.type === 'undefined') {
+        return;
+      }
       var value = json[key];
+
       if (!type.resolvedType) { // 基础类型
         result[key] = value;
         return;
@@ -50,7 +53,7 @@ module.exports = function(Schema) {
    */
   function jsonify(messager, json) {
     if (arguments.length === 1) {
-      json = messager.toRaw();
+      json = messager.toRaw(false, true);
       messager = messager.$type.clazz;
     }
     if (!json) {
@@ -67,10 +70,14 @@ module.exports = function(Schema) {
         delete json[key];
         return;
       }
-
+      if (typeof type.type === 'undefined') {
+        delete json[key];
+        return;
+      }
       var value = json[key];
       if (value === null) {
         delete json[key];
+        return;
       }
       if (!type.resolvedType) { // 基础类型
         return;
@@ -98,11 +105,11 @@ module.exports = function(Schema) {
     ```js
     var _ = jpacks;
     var _schema = _.array(
-      _.protobuf('test/protoify/json.proto', 'js', 'Value'),
+      _.protobuf('test/protoify/json.proto', 'js.Value', 'uint16'),
       'int8'
     );
     console.log(_.stringify(_schema))
-    // > array(protobuf(test/protoify/json.proto,js,Value),int8)
+    // > array(protobuf(test/protoify/json.proto,js.Value,uint16),int8)
 
     var buffer = _.pack(_schema, [{
       integer: 123
@@ -122,30 +129,55 @@ module.exports = function(Schema) {
     }]);
 
     console.log(buffer.join(' '));
-    // > 2 8 246 1 58 31 10 6 26 4 110 97 109 101 10 6 26 4 121 101 97 114 18 8 26 6 122 115 119 97 110 103 18 3 8 190 31
+    // > 2 3 0 8 246 1 33 0 58 31 10 6 26 4 110 97 109 101 10 6 26 4 121 101 97 114 18 8 26 6 122 115 119 97 110 103 18 3 8 190 31
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // > [{"type":"object","object":{"keys":[{"type":"string","string":"name"},{"type":"string","string":"year"}],"values":[{"type":"string","string":"zswang"},{"type":"integer","integer":2015}]}},{"type":"integer","integer":2015}]
+    // > [{"integer":123},{"object":{"keys":[{"string":"name"},{"string":"year"}],"values":[{"string":"zswang"},{"integer":2015}]}}]
+    ```
+   * @example protobufCreator():bigint
+    ```js
+    var _ = jpacks;
+    var _schema = _.array(
+      _.protobuf('test/protoify/bigint.proto', 'bigint.Value', 'uint16'),
+      'int8'
+    );
+    console.log(_.stringify(_schema))
+    // > array(protobuf(test/protoify/bigint.proto,bigint.Value,uint16),int8)
+
+    var buffer = _.pack(_schema, [{
+      int64: "-192377746236123"
+    }, {
+      uint64: "192377746236123"
+    }]);
+
+    console.log(buffer.join(' '));
+    // > 2 11 0 8 165 186 151 134 137 161 212 255 255 1 8 0 16 219 197 232 249 246 222 43
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [{"int64":"-192377746236123"},{"uint64":"192377746236123"}]
     ```
    '''</example>'''
    */
-  function protobufCreator(filename, packagename, messagename) {
+  function protobufCreator(filename, messagepath, size) {
     var builder = protobufjs.loadProtoFile(filename);
-    var packager = builder.build(packagename);
-    var messager = packager[messagename];
-
+    var messager = builder.build(messagepath);
     return new Schema({
       unpack: function(buffer, options, offsets) {
-        var uint8Array = new Uint8Array(buffer, offsets[0]);
-        var rs = messager.decode(uint8Array);
-        offsets[0] += rs.calculate();
+        var bytes = Schema.unpack(Schema.bytes(size), buffer, options, offsets);
+        var rs = messager.decode(bytes);
+        var calculate = rs.calculate();
+        if (calculate <= 0) {
+          return null;
+        }
         return jsonify(rs);
       },
       pack: function _pack(value, options, buffer) {
+        if (!value) {
+          return;
+        }
         var message = protoify(messager, value);
-        var arrayBuffer = message.toArrayBuffer();
-        var uint8Array = new Uint8Array(arrayBuffer);
-        Schema.pack(Schema.bytes(uint8Array.length), uint8Array, options, buffer);
+        var uint8Array = new Uint8Array(message.toArrayBuffer());
+        Schema.pack(Schema.bytes(size), uint8Array, options, buffer);
       },
       namespace: 'protobuf',
       args: arguments
