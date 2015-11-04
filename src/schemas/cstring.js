@@ -20,8 +20,6 @@ module.exports = function(Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > "Hello 你好！"
     ```
-   '''</example>'''
-   '''<example>'''
    * @example cstringCreator():pchar
     ```js
     var _ = jpacks;

@@ -22,8 +22,6 @@ module.exports = function (Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [12337,12851]
     ```
-   '''</example>'''
-   '''<example>'''
    * @example arrayCreator():dynamic array
     ```js
     var _ = jpacks;

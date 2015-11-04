@@ -21,6 +21,7 @@ module.exports = function (Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [0,1,2,3,4,5]
     ```
+    '''</example>'''
    */
   function bytes(count) {
     return Schema.array('uint8', count);

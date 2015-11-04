@@ -6,7 +6,7 @@
    * @author
    *   zswang (http://weibo.com/zswang)
    * @version 0.3.1
-   * @date 2015-11-03
+   * @date 2015-11-04
    */
   function createSchema() {
   /**
@@ -225,8 +225,6 @@
     t()('x')()()('y')()()('z');
     // -> ["x","y","z"]
     ```
-   '''</example>'''
-   '''<example>'''
    * @example together():hook
     ```js
     var _ = jpacks;
@@ -460,8 +458,6 @@
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [12337,12851]
     ```
-   '''</example>'''
-   '''<example>'''
    * @example arrayCreator():dynamic array
     ```js
     var _ = jpacks;
@@ -577,6 +573,7 @@
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [0,1,2,3,4,5]
     ```
+    '''</example>'''
    */
   function bytes(count) {
     return Schema.array('uint8', count);
@@ -600,8 +597,6 @@
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > ["zswang",1978]
     ```
-   '''</example>'''
-   '''<example>'''
    * @example objectCreator:object
     ```js
     var _ = jpacks;
@@ -747,8 +742,6 @@
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > "Tues"
     ```
-   '''</example>'''
-   '''<example>'''
    * @example enumsCreator():map is object
     ```js
     var _ = jpacks;
@@ -768,8 +761,6 @@
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > "Unknown"
     ```
-   '''</example>'''
-   '''<example>'''
    * @example enumsCreator():fault tolerant
     var _ = jpacks;
     var _schema = _.enums({
@@ -1032,8 +1023,6 @@
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > "Hello 你好！"
     ```
-   '''</example>'''
-   '''<example>'''
    * @example cstringCreator():pchar
     ```js
     var _ = jpacks;

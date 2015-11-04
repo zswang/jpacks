@@ -21,8 +21,6 @@ module.exports = function (Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > "Tues"
     ```
-   '''</example>'''
-   '''<example>'''
    * @example enumsCreator():map is object
     ```js
     var _ = jpacks;
@@ -44,8 +42,6 @@ module.exports = function (Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > "Unknown"
     ```
-   '''</example>'''
-   '''<example>'''
    * @example enumsCreator():fault tolerant
     var _ = jpacks;
     var _schema = _.enums({

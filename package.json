@@ -4,7 +4,7 @@
   "description": "Binary data packing and unpacking.",
   "version": "0.3.1",
   "homepage": "http://github.com/zswang/jpacks",
-  "main": "jpacks.js",
+  "main": "src/jpacks.js",
   "author": {
     "name": "zswang",
     "url": "http://weibo.com/zswang"
@@ -26,6 +26,7 @@
   "license": "MIT",
   "readmeFilename": "README.md",
   "dependencies": {
+    "protobufjs": "^4.1.2",
     "jints": "^0.0.4"
   },
   "devDependencies": {

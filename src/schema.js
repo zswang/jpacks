@@ -261,8 +261,6 @@ function createSchema() {
     t()('x')()()('y')()()('z');
     // -> ["x","y","z"]
     ```
-   '''</example>'''
-   '''<example>'''
    * @example together():hook
     ```js
     var _ = jpacks;

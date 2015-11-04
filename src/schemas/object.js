@@ -20,8 +20,6 @@ module.exports = function (Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > ["zswang",1978]
     ```
-   '''</example>'''
-   '''<example>'''
    * @example objectCreator:object
     ```js
     var _ = jpacks;
