@@ -2,7 +2,7 @@
   "name": "jpacks",
   "title": "c struct packer",
   "description": "Binary data packing and unpacking.",
-  "version": "0.3.1",
+  "version": "0.3.4",
   "homepage": "http://github.com/zswang/jpacks",
   "main": "src/jpacks.js",
   "author": {
@@ -38,14 +38,14 @@
     "jshint": "^2.8.0"
   },
   "scripts": {
+    "_update_version": "jdists version.jdists",
     "_dist_dev": "jdists src/jpacks.js -o jpacks.dev.js -r deubg,test,remove",
     "_dist": "jdists src/jpacks.js -o jpacks.js -r debug,test,remove,safe",
     "_compress": "uglifyjs jpacks.js -o jpacks.min.js -p 5 -c -m",
-
     "example": "jdists example.jdists.js -o test/example.js",
     "test": "istanbul cover --hook-run-in-context node_modules/mocha/bin/_mocha -- -R spec",
     "mocha": "jdists example.jdists.js -o test/example.js && mocha",
-    "dist": "npm run example && npm run _dist_dev && npm run _dist && npm run _compress && npm run test",
+    "dist": "npm run _update_version && npm run example && npm run _dist_dev && npm run _dist && npm run _compress && npm run test",
     "lint": "jshint src/**/*.js src/*.js *.json"
   },
   "files": [

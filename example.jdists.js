@@ -33,6 +33,7 @@ forEach(function (item) {
   </jdists>*/
 forEach(function (item) {
 !#{'describe("' + item + '", function () {'}
+  !#{'printValue = undefined;'}
   <!~jdists import="#{item}?example*" /~>
 !#{'});'}
 });
