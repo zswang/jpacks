@@ -44,6 +44,12 @@ describe("./src/schema.js", function () {
     });
     print(t(1)(2).schema);
         assert.equal(printValue, "f(1,2)"); printValue = undefined;
+    function go() {
+      print(1);
+    }
+    var g = _.together(go);
+    g();
+        assert.equal(printValue, "1"); printValue = undefined;
   });
 });
 describe("./src/schemas/array.js", function () {
@@ -228,9 +234,11 @@ describe("./src/schemas/enums.js", function () {
         assert.equal(printValue, "2"); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer)));
         assert.equal(printValue, "2"); printValue = undefined;
+  });
 });
 describe("./src/schemas/number.js", function () {
   printValue = undefined;
+  it("all number", function () {
     var _ = jpacks;
     var _map = {
       bytes: _.bytes(8)
@@ -444,6 +452,11 @@ describe("./schemas-extend/bigint.js", function () {
         assert.equal(printValue, "255 255 255 255 255 255 255 254"); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
         assert.equal(printValue, "\"-2\""); printValue = undefined;
+    var buffer = _.pack(_schema, "-0xff11233ff", { littleEndian: false });
+    print(buffer.join(' '));
+        assert.equal(printValue, "255 255 255 240 14 237 204 1"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
+        assert.equal(printValue, "\"-68469011455\""); printValue = undefined;
   });
 });
 describe("./schemas-extend/protobuf.js", function () {
@@ -516,6 +529,27 @@ describe("./schemas-extend/protobuf.js", function () {
     print(JSON.stringify(_.unpack(_schema, buffer)));
         assert.equal(printValue, "[{\"string\":\"Hello World!你好世界!\"},{\"bytes\":\"你好世界!Hello World!\"}]"); printValue = undefined;
   });
+  it("protobufCreator():proto text", function () {
+    var _ = jpacks;
+    var _schema = _.array(
+      _.protobuf('message Value { required string text = 1; }', 'Value', 'uint16'),
+      'int8'
+    );
+    print(_.stringify(_schema))
+        assert.equal(printValue, "array(protobuf('message Value { required string text = 1; }','Value','uint16'),'int8')"); printValue = undefined;
+    _.setDefaultOptions({
+      protobuf_bytesAsString: true
+    });
+    var buffer = _.pack(_schema, [{
+      text: "a"
+    }, {
+      text: "b"
+    }]);
+    print(buffer.join(' '));
+        assert.equal(printValue, "2 3 0 10 1 97 3 0 10 1 98"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+        assert.equal(printValue, "[{\"text\":\"a\"},{\"text\":\"b\"}]"); printValue = undefined;
+  });
 });
 describe("./schemas-extend/zlib.js", function () {
   printValue = undefined;
@@ -537,6 +571,8 @@ describe("./schemas-extend/zlib.js", function () {
         assert.equal(printValue, "121 178 119 193 211 165 123 159 236 152 246 124 106 207 251 61 141 30 169 57 57 249 0 183 181 133 147 21 0 0 0"); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer)));
         assert.equal(printValue, "{\"type\":2,\"data\":\"你好世界！Hello\"}"); printValue = undefined;
+    print(_.stringify(_.gzip(_.longString)));
+        assert.equal(printValue, "gzip(string('uint32'))"); printValue = undefined;
   });
   it("inflateCreator():base", function () {
     var _ = jpacks;
@@ -554,5 +590,7 @@ describe("./schemas-extend/zlib.js", function () {
         assert.equal(printValue, "2 30 0 120 156 19 121 178 119 193 211 165 123 159 236 152 246 124 106 207 251 61 141 30 169 57 57 249 0 152 20 12 247"); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer)));
         assert.equal(printValue, "{\"type\":2,\"data\":\"你好世界！Hello\"}"); printValue = undefined;
+    print(_.stringify(_.inflate(_.longString)));
+        assert.equal(printValue, "inflate(string('uint32'))"); printValue = undefined;
   });
 });

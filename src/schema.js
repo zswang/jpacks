@@ -184,10 +184,11 @@ function createSchema() {
     console.log('unpack(packSchema: %j, buffer: %j)', packSchema, buffer);
     //</debug>*/
     var schema = Schema.from(packSchema);
+    /*<safe>*/
     if (!schema) {
       throw new Error('Parameter schema "' + packSchema + '" is unregister.');
     }
-
+    /*</safe>*/
     buffer = arrayBufferFrom(buffer); // 确保是 ArrayBuffer 类型
     options = options || {};
     offsets = offsets || [0];
@@ -214,9 +215,11 @@ function createSchema() {
     //</debug>*/
 
     var schema = Schema.from(packSchema);
+    /*<safe>*/
     if (!schema) {
       throw new Error('Parameter schema "' + packSchema + '" is unregister.');
     }
+    /*</safe>*/
 
     buffer = buffer || [];
 
@@ -248,19 +251,19 @@ function createSchema() {
     var t = _.together(f);
 
     t(1)()(2, 3);
-    // -> [1,2,3]
+    // > [1,2,3]
 
     t(4)(5)()(6);
-    // -> [4,5,6]
+    // > [4,5,6]
 
     t(7, 8, 9);
-    // -> [7,8,9]
+    // > [7,8,9]
 
     t('a', 'b')('c');
-    // -> ["a","b","c"]
+    // > ["a","b","c"]
 
     t()('x')()()('y')()()('z');
-    // -> ["x","y","z"]
+    // > ["x","y","z"]
     ```
    * @example together():hook
     ```js
@@ -271,7 +274,14 @@ function createSchema() {
       t.schema = 'f(' + args + ')';
     });
     console.log(t(1)(2).schema);
-    // -> f(1,2)
+    // > f(1,2)
+
+    function go() {
+      console.log(1);
+    }
+    var g = _.together(go);
+    g();
+    // > 1
     ```
    '''</example>'''
    */

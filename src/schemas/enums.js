@@ -43,6 +43,7 @@ module.exports = function (Schema) {
     // > "Unknown"
     ```
    * @example enumsCreator():fault tolerant
+    ```js
     var _ = jpacks;
     var _schema = _.enums({
       Unknown: -1,
@@ -61,6 +62,7 @@ module.exports = function (Schema) {
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > 2
+    ```
    '''</example>'''
    */
   function enumsCreator(map, baseSchema) {

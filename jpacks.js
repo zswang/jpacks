@@ -5,8 +5,8 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.3.17
-   * @date 2015-11-05
+   * @version 0.3.24
+   * @date 2015-11-06
    */
   function createSchema() {
   /**
@@ -164,9 +164,6 @@
    */
   function unpack(packSchema, buffer, options, offsets) {
     var schema = Schema.from(packSchema);
-    if (!schema) {
-      throw new Error('Parameter schema "' + packSchema + '" is unregister.');
-    }
     buffer = arrayBufferFrom(buffer); // 确保是 ArrayBuffer 类型
     options = options || {};
     offsets = offsets || [0];
@@ -188,9 +185,6 @@
    */
   function pack(packSchema, data, options, buffer) {
     var schema = Schema.from(packSchema);
-    if (!schema) {
-      throw new Error('Parameter schema "' + packSchema + '" is unregister.');
-    }
     buffer = buffer || [];
     options = options || {};
     Object.keys(defaultOptions).forEach(function(key) {
@@ -216,15 +210,15 @@
     }
     var t = _.together(f);
     t(1)()(2, 3);
-    // -> [1,2,3]
+    // > [1,2,3]
     t(4)(5)()(6);
-    // -> [4,5,6]
+    // > [4,5,6]
     t(7, 8, 9);
-    // -> [7,8,9]
+    // > [7,8,9]
     t('a', 'b')('c');
-    // -> ["a","b","c"]
+    // > ["a","b","c"]
     t()('x')()()('y')()()('z');
-    // -> ["x","y","z"]
+    // > ["x","y","z"]
     ```
    * @example together():hook
     ```js
@@ -234,7 +228,13 @@
       t.schema = 'f(' + args + ')';
     });
     console.log(t(1)(2).schema);
-    // -> f(1,2)
+    // > f(1,2)
+    function go() {
+      console.log(1);
+    }
+    var g = _.together(go);
+    g();
+    // > 1
     ```
    '''</example>'''
    */
@@ -333,8 +333,8 @@
    *       @field {string} type 对应 DataView 类型名
    *       @field {number} size 数据大小，单位 byte
    *       @field {Array of string} alias 别名
-   * @example all number
    '''<example>'''
+   * @example all number
     ```js
     var _ = jpacks;
     var _map = {
@@ -769,6 +769,7 @@
     // > "Unknown"
     ```
    * @example enumsCreator():fault tolerant
+    ```js
     var _ = jpacks;
     var _schema = _.enums({
       Unknown: -1,
@@ -785,6 +786,7 @@
     // > 2
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > 2
+    ```
    '''</example>'''
    */
   function enumsCreator(map, baseSchema) {

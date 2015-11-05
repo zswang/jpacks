@@ -9,8 +9,8 @@ module.exports = function defineNumber(Schema) {
    *       @field {string} type 对应 DataView 类型名
    *       @field {number} size 数据大小，单位 byte
    *       @field {Array of string} alias 别名
-   * @example all number
    '''<example>'''
+   * @example all number
     ```js
     var _ = jpacks;
     var _map = {

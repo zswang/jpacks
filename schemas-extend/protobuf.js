@@ -195,10 +195,42 @@ module.exports = function(Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [{"string":"Hello World!你好世界!"},{"bytes":"你好世界!Hello World!"}]
     ```
+   * @example protobufCreator():proto text
+    ```js
+    var _ = jpacks;
+    var _schema = _.array(
+      _.protobuf('message Value { required string text = 1; }', 'Value', 'uint16'),
+      'int8'
+    );
+    console.log(_.stringify(_schema))
+
+    // > array(protobuf('message Value { required string text = 1; }','Value','uint16'),'int8')
+
+    _.setDefaultOptions({
+      protobuf_bytesAsString: true
+    });
+
+    var buffer = _.pack(_schema, [{
+      text: "a"
+    }, {
+      text: "b"
+    }]);
+
+    console.log(buffer.join(' '));
+    // > 2 3 0 10 1 97 3 0 10 1 98
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [{"text":"a"},{"text":"b"}]
+    ```
    '''</example>'''
    */
-  function protobufCreator(filename, messagepath, size) {
-    var builder = protobufjs.loadProtoFile(filename);
+  function protobufCreator(prototext, messagepath, size) {
+    var builder;
+    if (/\s.*[{};]/.test(prototext)) {
+      builder = protobufjs.loadProto(prototext);
+    } else {
+      builder = protobufjs.loadProtoFile(prototext);
+    }
     var messager = builder.build(messagepath);
     return new Schema({
       unpack: function(buffer, options, offsets) {

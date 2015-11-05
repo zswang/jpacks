@@ -103,6 +103,14 @@ module.exports = function(Schema) {
 
     console.log(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
     // > "-2"
+
+    var buffer = _.pack(_schema, "-0xff11233ff", { littleEndian: false });
+
+    console.log(buffer.join(' '));
+    // > 255 255 255 240 14 237 204 1
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
+    // > "-68469011455"
     ```
    '''</example>'''
    */
@@ -135,11 +143,13 @@ module.exports = function(Schema) {
         }
         var signed = value.indexOf('-') >= 0;
         var hex;
-        if (/^0x/.test(value)) {
-          hex = value.slice(2 + signed ? 1 : 0);
+        if (/^[-+]?0x/.test(value)) {
+          hex = value.replace(/^[-+]?0x/, ''); // 清除符号和前缀
         } else {
           hex = jints.digit(value, 10, 16);
         }
+        console.log('value: %j', hex);
+
         hex = jints.fullZero(hex, 16).replace(/^.+(.{16})$/, '$1'); // 避免位数过高
         var bytes = hex2bytes(hex);
         if (signed) {

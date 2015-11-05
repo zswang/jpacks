@@ -30,6 +30,9 @@ module.exports = function(Schema) {
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > {"type":2,"data":"你好世界！Hello"}
+
+    console.log(_.stringify(_.gzip(_.longString)));
+    // > gzip(string('uint32'))
     ```
    '''</example>'''
    */
@@ -77,6 +80,9 @@ module.exports = function(Schema) {
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > {"type":2,"data":"你好世界！Hello"}
+
+    console.log(_.stringify(_.inflate(_.longString)));
+    // > inflate(string('uint32'))
     ```
    '''</example>'''
    */
