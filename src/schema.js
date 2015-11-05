@@ -30,6 +30,7 @@ function createSchema() {
    * @constructor 构造数据结构类型
    */
   function Schema(options) {
+    options = options || {};
     var self = this;
     Object.keys(options).forEach(function(key) {
       self[key] = options[key];
@@ -332,7 +333,7 @@ function createSchema() {
       if (typeof obj === 'function') {
         if (!obj.name) {
           obj.name = '_pack_fn' + (guid++);
-          Schema.define(obj.name, obj);
+          Schema.def(obj.name, obj);
         }
       } else if (typeof obj === 'object') {
         var result = new obj.constructor();
