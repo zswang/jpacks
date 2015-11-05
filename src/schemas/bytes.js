@@ -11,7 +11,7 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = jpacks.bytes(6);
     console.log(String(_schema));
-    // > array(uint8,6)
+    // > array('uint8',6)
 
     var value = [0, 1, 2, 3, 4, 5];
     var buffer = jpacks.pack(_schema, value);

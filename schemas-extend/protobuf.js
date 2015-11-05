@@ -61,7 +61,7 @@ module.exports = function(Schema) {
    * @param {Object} json JSON 数据
    */
   function jsonify(messager, json, options) {
-    if (!json) {
+    if (!json || !messager) {
       return;
     }
     var type = messager.$type;
@@ -122,7 +122,7 @@ module.exports = function(Schema) {
       'int8'
     );
     console.log(_.stringify(_schema))
-    // > array(protobuf(test/protoify/json.proto,js.Value,uint16),int8)
+    // > array(protobuf('test/protoify/json.proto','js.Value','uint16'),'int8')
 
     var buffer = _.pack(_schema, [{
       integer: 123
@@ -155,7 +155,7 @@ module.exports = function(Schema) {
       'int8'
     );
     console.log(_.stringify(_schema))
-    // > array(protobuf(test/protoify/bigint.proto,bigint.Value,uint16),int8)
+    // > array(protobuf('test/protoify/bigint.proto','bigint.Value','uint16'),'int8')
 
     var buffer = _.pack(_schema, [{
       int64: "-192377746236123"
@@ -177,7 +177,7 @@ module.exports = function(Schema) {
       'int8'
     );
     console.log(_.stringify(_schema))
-    // > array(protobuf(test/protoify/string.proto,str.Value,uint16),int8)
+    // > array(protobuf('test/protoify/string.proto','str.Value','uint16'),'int8')
 
     _.setDefaultOptions({
       protobuf_bytesAsString: true

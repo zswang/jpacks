@@ -15,7 +15,7 @@ module.exports = function (Schema) {
       content: _.shortString
     }, 20);
     console.log(_.stringify(_schema));
-    // > union({length:uint8,content:string(uint8)},20)
+    // > union({length:'uint8',content:string('uint8')},20)
 
     var buffer = _.pack(_schema, {
       content: '0123456789'

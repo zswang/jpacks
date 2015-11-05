@@ -21,7 +21,7 @@ module.exports = function defineNumber(Schema) {
     });
     var _schema = _.union(_map, 8);
     console.log(_.stringify(_schema));
-    // > union({bytes:array(uint8,8),int8:int8,int16:int16,int32:int32,uint8:uint8,uint16:uint16,uint32:uint32,float32:float32,float64:float64,shortint:shortint,smallint:smallint,longint:longint,byte:byte,word:word,longword:longword},8)
+    // > union({bytes:array('uint8',8),int8:'int8',int16:'int16',int32:'int32',uint8:'uint8',uint16:'uint16',uint32:'uint32',float32:'float32',float64:'float64',shortint:'shortint',smallint:'smallint',longint:'longint',byte:'byte',word:'word',longword:'longword'},8)
 
     var buffer = _.pack(_schema, {
       bytes: [0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89]

@@ -12,7 +12,7 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = jpacks.array('int16', 2);
     console.log(String(_schema));
-    // > array(int16,2)
+    // > array('int16',2)
 
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
@@ -27,7 +27,7 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = jpacks.array('int16', 'int8');
     console.log(String(_schema));
-    // > array(int16,int8)
+    // > array('int16','int8')
 
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
@@ -42,7 +42,7 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = jpacks.array('int16')(6);
     console.log(String(_schema));
-    // > array(int16,6)
+    // > array('int16',6)
 
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
@@ -70,11 +70,6 @@ module.exports = function (Schema) {
       size = itemSchema.size * count;
     } else {
       countSchema = Schema.from(count);
-      /*<safe>*/
-      if (countSchema.namespace !== 'number') {
-        throw new Error('Parameter "count" is not a numeric type.');
-      }
-      /*</safe>*/
     }
 
     return new Schema({

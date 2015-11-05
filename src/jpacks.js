@@ -51,6 +51,8 @@
     require('./schemas/cases')(Schema);
     require('./schemas/depend')(Schema);
     require('./schemas/parse')(Schema);
+
+    require('./schemas/virtual')(Schema);
     /*</jdists>*/
 
     return Schema;

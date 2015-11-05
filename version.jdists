@@ -1,4 +1,5 @@
 /*<jdists encoding='jhtmls' data='package.json' export='package.json'>*/
+ main = 'jpacks.js';
 version = version.replace(/\d+$/, function (value) {
   return parseInt(value) + 1;
 });

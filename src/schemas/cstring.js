@@ -25,7 +25,7 @@ module.exports = function(Schema) {
     var _ = jpacks;
     var _schema = _.array(_.pchar, 'uint8');
     console.log(_.stringify(_schema));
-    // > array(cstring(true),uint8)
+    // > array(cstring(true),'uint8')
 
     var buffer = _.pack(_schema, ['abc', 'defghijk', 'g']);
     console.log(buffer.join(' '));

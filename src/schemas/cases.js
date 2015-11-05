@@ -17,7 +17,7 @@ module.exports = function (Schema) {
       ]))
     };
     console.log(_.stringify(_schema));
-    // > {type:string(uint8),data:depend(type,cases([[name,string(uint8)],[age,uint8]]))}
+    // > {type:string('uint8'),data:depend('type',cases([['name',string('uint8')],['age','uint8']]))}
 
     var buffer = _.pack(_schema, {
       type: 'name',

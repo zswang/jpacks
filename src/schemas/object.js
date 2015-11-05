@@ -11,7 +11,7 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = _.object([_.shortString, _.word]);
     console.log(_.stringify(_schema));
-    // > object([string(uint8),uint16])
+    // > object([string('uint8'),'uint16'])
 
     var buffer = _.pack(_schema, ['zswang', 1978]);
     console.log(buffer.join(' '));
@@ -28,7 +28,7 @@ module.exports = function (Schema) {
       year: _.word
     });
     console.log(_.stringify(_schema));
-    // > object({namespace:string,args:{0:uint8}})
+    // > object({name:string('uint8'),year:'uint16'})
 
     var buffer = _.pack(_schema, {
         name: 'zswang',

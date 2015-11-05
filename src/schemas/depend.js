@@ -11,7 +11,7 @@ module.exports = function (Schema) {
    *    function schemaCreator(value) {}
    * ]]]
    '''<example>'''
-   * @example dependCreator()
+   * @example dependCreator():base
     ```js
     var _ = jpacks;
     var _schema = _.object({
@@ -21,7 +21,7 @@ module.exports = function (Schema) {
       data2: _.depend('length2', _.array(_.shortString))
     });
     console.log(_.stringify(_schema));
-    // > object({length1:int8,length2:int8,data1:depend(length1,bytes),data2:depend(length2,array(string(uint8)))})
+    // > object({length1:'int8',length2:'int8',data1:depend('length1','bytes'),data2:depend('length2',array(string('uint8')))})
 
     var buffer = _.pack(_schema, {
       length1: 2,

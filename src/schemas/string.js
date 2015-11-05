@@ -85,8 +85,6 @@ module.exports = function (Schema) {
     // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111 0 0 0 0 0
     console.log(_.unpack(_schema, buffer));
     // > 你好世界！Hello
-   '''<example>'''
-   '''<example>'''
    * @example stringCreator():dynamic
     var _ = jpacks;
     var _schema = _.string('int8');

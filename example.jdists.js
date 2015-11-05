@@ -39,23 +39,18 @@ forEach(function (item) {
 });
 /*</jdists>*/
 
-<!--jdists export="#pattern">/^\s*\*\s*@example\s*(.*)$/mg</jdists-->
-<!--jdists export="#replacement">  it("$1", function () {</jdists-->
-<!--jdists encoding="regex" import="#example" pattern="#pattern" replacement="#replacement" export="#example" /-->
-
-<!--jdists export="#pattern">/^\s*```js\s*$/mg</jdists-->
-<!--jdists export="#replacement"></jdists-->
-<!--jdists encoding="regex" import="#example" pattern="#pattern" replacement="#replacement" export="#example" /-->
-
-<!--jdists export="#pattern">/^\s*```\s*$/mg</jdists-->
-<!--jdists export="#replacement">  });</jdists-->
-<!--jdists encoding="regex" import="#example" pattern="#pattern" replacement="#replacement" export="#example" /-->
-
-<!--jdists export="#pattern">/console\.log/g</jdists-->
-<!--jdists export="#replacement">print</jdists-->
-<!--jdists encoding="regex" import="#example" pattern="#pattern" replacement="#replacement" export="#example" /-->
-
-<!--jdists export="#pattern">/\/\/ -?>\s*(.*)/gm</jdists-->
-<!--jdists export="#replacement">assert.equal(printValue, '$1'); printValue = undefined;</jdists-->
-<!--jdists encoding="regex" import="#example" pattern="#pattern" replacement="#replacement" export="#example" /-->
-/*<jdists import="#example"/>*/
+/*<jdists export="#replacer">*/
+function (content) {
+  content = content.replace(/^\s*\*\s*@example\s*(.*)$/mg,
+    '  it("$1", function () {');
+  content = content.replace(/^\s*```js\s*$/mg, '');
+  content = content.replace(/\/\/ -?>\s*(.*)/gm, function (all, output) {
+    return '    assert.equal(printValue, ' + JSON.stringify(output) + '); printValue = undefined;'
+  });
+  content = content.replace(/console\.log/g, 'print');
+  content = content.replace(/^\s*```\s*$/mg,
+    '  });');
+  return content;
+}
+/*</jdists>*/
+/*<jdists encoding="#replacer" import="#example"/>*/

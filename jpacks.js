@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.3.13
+   * @version 0.3.15
    * @date 2015-11-05
    */
   function createSchema() {
@@ -38,7 +38,7 @@
    */
   function Schema(options) {
     var self = this;
-    Object.keys(options).forEach(function (key) {
+    Object.keys(options).forEach(function(key) {
       self[key] = options[key];
     });
   }
@@ -49,7 +49,7 @@
    * @param {Schema|string|Function} schema 数据结构或者数据结构名
    * @return {boolean} 返回是否定义成功
    */
-  Schema.register = function (name, schema) {
+  Schema.register = function(name, schema) {
     schemas[name] = schema;
     if (!Schema[name]) { // 避免覆盖系统方法
       Schema[name] = schema;
@@ -88,7 +88,7 @@
    *   function _pattern(schema) {}
    * ]]]
    */
-  Schema.pushPattern = function (pattern) {
+  Schema.pushPattern = function(pattern) {
     schemaPatterns.push(pattern);
   };
   /**
@@ -97,7 +97,7 @@
    * @param {string|Object|Schema} schema 数据结构名
    * @return {Schema} 返回名字对应的数据结构
    */
-  Schema.from = function (schema) {
+  Schema.from = function(schema) {
     if (schema instanceof Schema) {
       return schema;
     }
@@ -132,7 +132,7 @@
    */
   function setDefaultOptions(options) {
     options = options || {};
-    Object.keys(options).forEach(function (key) {
+    Object.keys(options).forEach(function(key) {
       defaultOptions[key] = options[key];
     });
   }
@@ -169,7 +169,7 @@
     buffer = arrayBufferFrom(buffer); // 确保是 ArrayBuffer 类型
     options = options || {};
     offsets = offsets || [0];
-    Object.keys(defaultOptions).forEach(function (key) {
+    Object.keys(defaultOptions).forEach(function(key) {
       if (typeof options[key] === 'undefined') {
         options[key] = defaultOptions[key];
       }
@@ -192,7 +192,7 @@
     }
     buffer = buffer || [];
     options = options || {};
-    Object.keys(defaultOptions).forEach(function (key) {
+    Object.keys(defaultOptions).forEach(function(key) {
       if (typeof options[key] === 'undefined') {
         options[key] = defaultOptions[key];
       }
@@ -273,39 +273,45 @@
       return result.join();
     }
     function scan(obj) {
+      // if (obj === null) {
+      //   return 'null';
+      // }
       if (!obj) {
         return obj;
       }
       if (obj.namespace) {
         if (obj.namespace === 'number') {
-          return obj.name;
+          return "'" + obj.name + "'";
         }
         if (obj.args) {
           return obj.namespace + '(' + stringify.apply(null, obj.args) + ')';
         }
-        return obj.namespace;
-      }
-      if (obj.name) {
-        return obj.name;
+        return "'" + obj.namespace + "'";
       }
       if (typeof obj === 'function') {
-        obj.name = '_pack_fn' + (guid++);
-        Schema.define(obj.name, obj);
-        return obj.name;
-      }
-      if (typeof obj === 'object') {
+        if (!obj.name) {
+          obj.name = '_pack_fn' + (guid++);
+          Schema.define(obj.name, obj);
+        }
+      } else if (typeof obj === 'object') {
         var result = new obj.constructor();
-        Object.keys(obj).forEach(function (key) {
+        Object.keys(obj).forEach(function(key) {
           result[key] = scan(obj[key]);
         });
         return result;
+      }
+      if (obj.name) {
+        return "'" + obj.name + "'";
+      }
+      if (typeof obj === 'string') {
+        return "'" + obj + "'";
       }
       return obj;
     }
     return JSON.stringify(scan(obj) || '').replace(/"/g, '');
   }
   Schema.stringify = stringify;
-  Schema.prototype.toString = function () {
+  Schema.prototype.toString = function() {
     return stringify(this);
   };
   return Schema;
@@ -338,7 +344,7 @@
     });
     var _schema = _.union(_map, 8);
     console.log(_.stringify(_schema));
-    // > union({bytes:array(uint8,8),int8:int8,int16:int16,int32:int32,uint8:uint8,uint16:uint16,uint32:uint32,float32:float32,float64:float64,shortint:shortint,smallint:smallint,longint:longint,byte:byte,word:word,longword:longword},8)
+    // > union({bytes:array('uint8',8),int8:'int8',int16:'int16',int32:'int32',uint8:'uint8',uint16:'uint16',uint32:'uint32',float32:'float32',float64:'float64',shortint:'shortint',smallint:'smallint',longint:'longint',byte:'byte',word:'word',longword:'longword'},8)
     var buffer = _.pack(_schema, {
       bytes: [0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89]
     });
@@ -450,7 +456,7 @@
     var _ = jpacks;
     var _schema = jpacks.array('int16', 2);
     console.log(String(_schema));
-    // > array(int16,2)
+    // > array('int16',2)
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
     console.log(buffer.join(' '));
@@ -463,7 +469,7 @@
     var _ = jpacks;
     var _schema = jpacks.array('int16', 'int8');
     console.log(String(_schema));
-    // > array(int16,int8)
+    // > array('int16','int8')
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
     console.log(buffer.join(' '));
@@ -476,7 +482,7 @@
     var _ = jpacks;
     var _schema = jpacks.array('int16')(6);
     console.log(String(_schema));
-    // > array(int16,6)
+    // > array('int16',6)
     var value = [12337, 12851];
     var buffer = jpacks.pack(_schema, value);
     console.log(buffer.join(' '));
@@ -565,7 +571,7 @@
     var _ = jpacks;
     var _schema = jpacks.bytes(6);
     console.log(String(_schema));
-    // > array(uint8,6)
+    // > array('uint8',6)
     var value = [0, 1, 2, 3, 4, 5];
     var buffer = jpacks.pack(_schema, value);
     console.log(buffer.join(' '));
@@ -590,7 +596,7 @@
     var _ = jpacks;
     var _schema = _.object([_.shortString, _.word]);
     console.log(_.stringify(_schema));
-    // > object([string(uint8),uint16])
+    // > object([string('uint8'),'uint16'])
     var buffer = _.pack(_schema, ['zswang', 1978]);
     console.log(buffer.join(' '));
     // > 6 122 115 119 97 110 103 186 7
@@ -605,7 +611,7 @@
       year: _.word
     });
     console.log(_.stringify(_schema));
-    // > object({namespace:string,args:{0:uint8}})
+    // > object({name:string('uint8'),year:'uint16'})
     var buffer = _.pack(_schema, {
         name: 'zswang',
         year: 1978
@@ -676,7 +682,7 @@
       content: _.shortString
     }, 20);
     console.log(_.stringify(_schema));
-    // > union({length:uint8,content:string(uint8)},20)
+    // > union({length:'uint8',content:string('uint8')},20)
     var buffer = _.pack(_schema, {
       content: '0123456789'
     });
@@ -735,7 +741,7 @@
     var _ = jpacks;
     var _schema = _.enums(['Sun', 'Mon', 'Tues', 'Wed', 'Thur', 'Fri', 'Sat'], 'uint8');
     console.log(_.stringify(_schema));
-    // > enums({Sun:0,Mon:1,Tues:2,Wed:3,Thur:4,Fri:5,Sat:6},uint8)
+    // > enums({Sun:0,Mon:1,Tues:2,Wed:3,Thur:4,Fri:5,Sat:6},'uint8')
     var buffer = _.pack(_schema, 'Tues');
     console.log(buffer.join(' '));
     // > 2
@@ -754,7 +760,7 @@
       NotFound: 404
     }, 'int8');
     console.log(_.stringify(_schema));
-    // > enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
+    // > enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},'int8')
     var buffer = _.pack(_schema, 'Unknown');
     console.log(buffer.join(' '));
     // > 255
@@ -772,7 +778,7 @@
       NotFound: 404
     }, 'int8');
     console.log(_.stringify(_schema));
-    // > enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},int8)
+    // > enums({Unknown:-1,Continue:100,Processing:100,OK:200,Created:201,NotFound:404},'int8')
     var buffer = _.pack(_schema, 2);
     console.log(buffer.join(' '));
     // > 2
@@ -908,8 +914,6 @@
     // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111 0 0 0 0 0
     console.log(_.unpack(_schema, buffer));
     // > 你好世界！Hello
-   '''<example>'''
-   '''<example>'''
    * @example stringCreator():dynamic
     var _ = jpacks;
     var _schema = _.string('int8');
@@ -1028,7 +1032,7 @@
     var _ = jpacks;
     var _schema = _.array(_.pchar, 'uint8');
     console.log(_.stringify(_schema));
-    // > array(cstring(true),uint8)
+    // > array(cstring(true),'uint8')
     var buffer = _.pack(_schema, ['abc', 'defghijk', 'g']);
     console.log(buffer.join(' '));
     // > 3 97 98 99 0 100 101 102 103 104 105 106 107 0 103 0
@@ -1092,7 +1096,7 @@
       ]))
     };
     console.log(_.stringify(_schema));
-    // > {type:string(uint8),data:depend(type,cases([[name,string(uint8)],[age,uint8]]))}
+    // > {type:string('uint8'),data:depend('type',cases([['name',string('uint8')],['age','uint8']]))}
     var buffer = _.pack(_schema, {
       type: 'name',
       data: 'tom'
@@ -1135,7 +1139,7 @@
    *    function schemaCreator(value) {}
    * ]]]
    '''<example>'''
-   * @example dependCreator()
+   * @example dependCreator():base
     ```js
     var _ = jpacks;
     var _schema = _.object({
@@ -1145,7 +1149,7 @@
       data2: _.depend('length2', _.array(_.shortString))
     });
     console.log(_.stringify(_schema));
-    // > object({length1:int8,length2:int8,data1:depend(length1,bytes),data2:depend(length2,array(string(uint8)))})
+    // > object({length1:'int8',length2:'int8',data1:depend('length1','bytes'),data2:depend('length2',array(string('uint8')))})
     var buffer = _.pack(_schema, {
       length1: 2,
       length2: 3,
@@ -1210,7 +1214,7 @@
     };
     var _schema = _.parse(_xor, _xor, 'float64', 8);
     console.log(_.stringify(_schema));
-    // > parse(_xor,_xor,float64,8)
+    // > parse('_xor','_xor','float64',8)
     var buffer = _.pack(_schema, 2.94296650666094e+189);
     console.log(buffer.join(' '));
     // > 111 75 41 7 126 92 58 24
@@ -1239,6 +1243,107 @@
     fn.args = args;
   });
   Schema.register('parse', parse);
+  /**
+   * 定义一个虚拟结构
+   *
+   * @param {number|string} operator
+   * @param {object} value 数据结构
+   '''<example>'''
+   * @example virtualCreator:number
+    ```js
+    var _ = jpacks;
+    var _schema = _.object({
+      f1: 'uint16',
+      v1: _.depend('f1', _.virtual(-4))
+    });
+    console.log(_.stringify(_schema))
+    // > object({f1:'uint16',v1:depend('f1',virtual(-4))})
+    var buffer = _.pack(_schema, {
+      f1: 4
+    });
+    console.log(buffer.join(' '));
+    // > 4 0
+    console.log(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
+    // > {"f1":1024,"v1":1020}
+    ```
+   * @example virtualCreator:string
+    ```js
+    var _ = jpacks;
+    var _schema = _.object({
+      name: _.shortString,
+      welcome: _.depend('name', _.virtual('Hello '))
+    });
+    console.log(_.stringify(_schema))
+    // > object({name:string('uint8'),welcome:depend('name',virtual('Hello '))})
+    var buffer = _.pack(_schema, {
+      name: 'World!'
+    });
+    console.log(buffer.join(' '));
+    // > 6 87 111 114 108 100 33
+    console.log(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
+    // > {"name":"World!","welcome":"Hello World!"}
+    ```
+   * @example virtualCreator:depend
+    ```js
+    var _ = jpacks;
+    var _schema = _.object({
+      name: _.shortString,
+      welcome: _.depend('name', _.cases([
+        ['zswang', _.depend('name', _.virtual('Hello '))],
+        ['wang', _.depend('name', _.virtual('Hi '))]
+      ]))
+    });
+    console.log(_.stringify(_schema))
+    // > object({name:string('uint8'),welcome:depend('name',cases([['zswang',depend('name',virtual('Hello '))],['wang',depend('name',virtual('Hi '))]]))})
+    var buffer = _.pack(_schema, {
+      name: 'zswang'
+    });
+    console.log(buffer.join(' '));
+    // > 6 122 115 119 97 110 103
+    console.log(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
+    // > {"name":"zswang","welcome":"Hello zswang"}
+    var buffer = _.pack(_schema, {
+      name: 'wang'
+    });
+    console.log(buffer.join(' '));
+    // > 4 119 97 110 103
+    console.log(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
+    // > {"name":"wang","welcome":"Hi wang"}
+   ```
+   '''</example>'''
+   */
+  function virtualCreator(operator, value) {
+    return new Schema({
+      unpack: function _unpack() {
+        if (/string|number/.test(typeof operator)) {
+          return operator + value;
+        }
+        if (typeof operator === 'function') {
+          return operator(value);
+        }
+        return value;
+      },
+      pack: function _pack() {},
+      args: arguments,
+      namespace: 'virtual'
+    });
+  }
+  var virtual = Schema.together(virtualCreator, function (fn, args) {
+    fn.namespace = 'virtual';
+    fn.args = args;
+  });
+  Schema.register('virtual', virtual);
+  Schema.pushPattern(function _virtualPattern(schema) {
+    if (typeof schema === 'virtual') {
+      if (schema instanceof Schema) {
+        return;
+      }
+      if (schema instanceof Array) {
+        return;
+      }
+      return virtual(schema);
+    }
+  });
     return Schema;
   }
   var root = create();

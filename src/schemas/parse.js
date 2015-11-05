@@ -19,7 +19,7 @@ module.exports = function(Schema) {
     };
     var _schema = _.parse(_xor, _xor, 'float64', 8);
     console.log(_.stringify(_schema));
-    // > parse(_xor,_xor,float64,8)
+    // > parse('_xor','_xor','float64',8)
 
     var buffer = _.pack(_schema, 2.94296650666094e+189);
     console.log(buffer.join(' '));

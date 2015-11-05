@@ -26,7 +26,7 @@ module.exports = function(Schema) {
     var _ = jpacks;
     var _schema = _.uint64;
     console.log(_.stringify(_schema))
-    // > uint64
+    // > 'uint64'
 
     var buffer = _.pack(_schema, '1609531171697315243');
 
@@ -41,7 +41,7 @@ module.exports = function(Schema) {
     var _ = jpacks;
     var _schema = _.uint64;
     console.log(_.stringify(_schema))
-    // > uint64
+    // > 'uint64'
 
     var buffer = _.pack(_schema, 171697315);
 
@@ -56,7 +56,7 @@ module.exports = function(Schema) {
     var _ = jpacks;
     var _schema = _.uint64;
     console.log(_.stringify(_schema))
-    // > uint64
+    // > 'uint64'
 
     var buffer = _.pack(_schema, 171697315, { littleEndian: false });
 
@@ -71,7 +71,7 @@ module.exports = function(Schema) {
     var _ = jpacks;
     var _schema = _.int64;
     console.log(_.stringify(_schema))
-    // > int64
+    // > 'int64'
 
     var buffer = _.pack(_schema, '-1');
 
@@ -94,7 +94,7 @@ module.exports = function(Schema) {
     var _ = jpacks;
     var _schema = _.int64;
     console.log(_.stringify(_schema))
-    // > int64
+    // > 'int64'
 
     var buffer = _.pack(_schema, -2, { littleEndian: false });
 

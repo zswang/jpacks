@@ -31,7 +31,7 @@ function createSchema() {
    */
   function Schema(options) {
     var self = this;
-    Object.keys(options).forEach(function (key) {
+    Object.keys(options).forEach(function(key) {
       self[key] = options[key];
     });
   }
@@ -43,7 +43,7 @@ function createSchema() {
    * @param {Schema|string|Function} schema 数据结构或者数据结构名
    * @return {boolean} 返回是否定义成功
    */
-  Schema.register = function (name, schema) {
+  Schema.register = function(name, schema) {
     /*<safe>*/
     if (typeof name === 'undefined') {
       throw new Error('Parameter "name" is undefined.');
@@ -90,7 +90,7 @@ function createSchema() {
    *   function _pattern(schema) {}
    * ]]]
    */
-  Schema.pushPattern = function (pattern) {
+  Schema.pushPattern = function(pattern) {
     /*<safe>*/
     if (typeof pattern !== 'function') {
       return;
@@ -105,7 +105,7 @@ function createSchema() {
    * @param {string|Object|Schema} schema 数据结构名
    * @return {Schema} 返回名字对应的数据结构
    */
-  Schema.from = function (schema) {
+  Schema.from = function(schema) {
     /*<safe>*/
     if (typeof schema === 'undefined') { // 无效数据
       return;
@@ -147,7 +147,7 @@ function createSchema() {
    */
   function setDefaultOptions(options) {
     options = options || {};
-    Object.keys(options).forEach(function (key) {
+    Object.keys(options).forEach(function(key) {
       defaultOptions[key] = options[key];
     });
   }
@@ -190,7 +190,7 @@ function createSchema() {
     buffer = arrayBufferFrom(buffer); // 确保是 ArrayBuffer 类型
     options = options || {};
     offsets = offsets || [0];
-    Object.keys(defaultOptions).forEach(function (key) {
+    Object.keys(defaultOptions).forEach(function(key) {
       if (typeof options[key] === 'undefined') {
         options[key] = defaultOptions[key];
       }
@@ -220,7 +220,7 @@ function createSchema() {
     buffer = buffer || [];
 
     options = options || {};
-    Object.keys(defaultOptions).forEach(function (key) {
+    Object.keys(defaultOptions).forEach(function(key) {
       if (typeof options[key] === 'undefined') {
         options[key] = defaultOptions[key];
       }
@@ -311,35 +311,41 @@ function createSchema() {
       }
       return result.join();
     }
+
     function scan(obj) {
+      // if (obj === null) {
+      //   return 'null';
+      // }
       if (!obj) {
         return obj;
       }
       if (obj.namespace) {
         if (obj.namespace === 'number') {
-          return obj.name;
+          return "'" + obj.name + "'";
         }
         if (obj.args) {
           return obj.namespace + '(' + stringify.apply(null, obj.args) + ')';
         }
-        return obj.namespace;
-      }
-
-      if (obj.name) {
-        return obj.name;
+        return "'" + obj.namespace + "'";
       }
 
       if (typeof obj === 'function') {
-        obj.name = '_pack_fn' + (guid++);
-        Schema.define(obj.name, obj);
-        return obj.name;
-      }
-      if (typeof obj === 'object') {
+        if (!obj.name) {
+          obj.name = '_pack_fn' + (guid++);
+          Schema.define(obj.name, obj);
+        }
+      } else if (typeof obj === 'object') {
         var result = new obj.constructor();
-        Object.keys(obj).forEach(function (key) {
+        Object.keys(obj).forEach(function(key) {
           result[key] = scan(obj[key]);
         });
         return result;
+      }
+      if (obj.name) {
+        return "'" + obj.name + "'";
+      }
+      if (typeof obj === 'string') {
+        return "'" + obj + "'";
       }
       return obj;
     }
@@ -347,7 +353,7 @@ function createSchema() {
   }
   Schema.stringify = stringify;
 
-  Schema.prototype.toString = function () {
+  Schema.prototype.toString = function() {
     return stringify(this);
   };
   return Schema;
