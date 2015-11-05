@@ -111,8 +111,8 @@ module.exports = function(Schema) {
    * protobuf 数据结构
    *
    * @param {string} filename 文件名
-   * @param {string} packagename 包名
-   * @param {string} messagename 信息名
+   * @param {string} messagepath 消息体路径
+   * @param {string|number|boolean} size 内容大小，为 true 则为自动大小
    '''<example>'''
    * @example protobufCreator():base
     ```js
@@ -204,8 +204,8 @@ module.exports = function(Schema) {
       unpack: function(buffer, options, offsets) {
         var bytes = Schema.unpack(Schema.bytes(size), buffer, options, offsets);
         var rs = messager.decode(bytes);
-        var calculate = rs.calculate();
-        if (calculate <= 0) {
+        var byteSize = rs.calculate();
+        if (byteSize <= 0) {
           return null;
         }
         return jsonify(messager, rs.toRaw(false, true), options);
@@ -215,8 +215,8 @@ module.exports = function(Schema) {
           return;
         }
         var message = protoify(messager, value, options);
-        var uint8Array = new Uint8Array(message.toArrayBuffer());
-        Schema.pack(Schema.bytes(size), uint8Array, options, buffer);
+        var bytes = new Uint8Array(message.toArrayBuffer());
+        Schema.pack(Schema.bytes(size), bytes, options, buffer);
       },
       namespace: 'protobuf',
       args: arguments
