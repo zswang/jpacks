@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.3.15
+   * @version 0.3.16
    * @date 2015-11-05
    */
   function createSchema() {
@@ -1333,17 +1333,6 @@
     fn.args = args;
   });
   Schema.register('virtual', virtual);
-  Schema.pushPattern(function _virtualPattern(schema) {
-    if (typeof schema === 'virtual') {
-      if (schema instanceof Schema) {
-        return;
-      }
-      if (schema instanceof Array) {
-        return;
-      }
-      return virtual(schema);
-    }
-  });
     return Schema;
   }
   var root = create();

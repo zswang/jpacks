@@ -102,16 +102,5 @@ module.exports = function (Schema) {
     fn.args = args;
   });
   Schema.register('virtual', virtual);
-  Schema.pushPattern(function _virtualPattern(schema) {
-    if (typeof schema === 'virtual') {
-      if (schema instanceof Schema) {
-        return;
-      }
-      if (schema instanceof Array) {
-        return;
-      }
-      return virtual(schema);
-    }
-  });
   /*</define>*/
 };
