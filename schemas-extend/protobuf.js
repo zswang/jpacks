@@ -10,7 +10,7 @@ module.exports = function(Schema) {
    */
   function protoify(messager, json, options) {
     if (!messager) {
-      throw new Error('messager is undefined.');
+      return json;
     }
     var result = {};
     Object.keys(json).forEach(function(key) {
@@ -62,7 +62,7 @@ module.exports = function(Schema) {
    */
   function jsonify(messager, json, options) {
     if (!json || !messager) {
-      return;
+      return json;
     }
     var type = messager.$type;
     Object.keys(json).forEach(function(key) {
