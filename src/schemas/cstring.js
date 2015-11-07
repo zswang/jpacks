@@ -20,12 +20,26 @@ module.exports = function(Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > "Hello 你好！"
     ```
+   * @example cstringCreator():auto size
+    ```js
+    var _ = jpacks;
+    var _schema = _.cstring(null);
+    console.log(_.stringify(_schema));
+    // > cstring(null)
+
+    var buffer = _.pack(_schema, 'Hello 你好！');
+    console.log(buffer.join(' '));
+    // > 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > "Hello 你好！"
+    ```
    * @example cstringCreator():pchar
     ```js
     var _ = jpacks;
     var _schema = _.array(_.pchar, 'uint8');
     console.log(_.stringify(_schema));
-    // > array(cstring(true),'uint8')
+    // > array(cstring(null),'uint8')
 
     var buffer = _.pack(_schema, ['abc', 'defghijk', 'g']);
     console.log(buffer.join(' '));
@@ -40,7 +54,7 @@ module.exports = function(Schema) {
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
         var bytes;
-        if (size === true) { // 自动大小
+        if (size === null) { // 自动大小
           bytes = new Uint8Array(buffer, offsets[0]);
         } else {
           bytes = Schema.unpack(Schema.bytes(size), buffer, options, offsets);
@@ -50,19 +64,15 @@ module.exports = function(Schema) {
           byteSize++;
         }
         var result = Schema.unpack(Schema.string(byteSize), bytes, options);
-        if (size === true) {
+        if (size === null) {
           offsets[0] += byteSize + 1;
         }
         return result;
       },
       pack: function _pack(value, options, buffer) {
         var bytes = [0];
-        [].unshift.apply(bytes, Schema.stringBytes(value, options));
-        if (size === true) { // 自动大小
-          Schema.pack(Schema.bytes(bytes.length), bytes, options, buffer);
-        } else {
-          Schema.pack(Schema.bytes(size), bytes, options, buffer);
-        }
+        [].unshift.apply(bytes, Schema.stringBytes(value, options)); // 追加零字符
+        Schema.pack(Schema.bytes(size), bytes, options, buffer);
       },
       namespace: 'cstring',
       args: arguments
@@ -73,6 +83,6 @@ module.exports = function(Schema) {
     fn.args = args;
   });
   Schema.register('cstring', cstring);
-  Schema.register('pchar', cstring(true));
+  Schema.register('pchar', cstring(null));
   /*</define>*/
 };

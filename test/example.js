@@ -90,6 +90,61 @@ describe("./src/schemas/array.js", function () {
     print(JSON.stringify(jpacks.unpack(_schema, buffer)));
         assert.equal(printValue, "[12337,12851,0,0,0,0]"); printValue = undefined;
   });
+  it("arrayCreator():auto size int8", function () {
+    var _ = jpacks;
+    var _schema = _.array('int8', null);
+    print(_.stringify(_schema))
+        assert.equal(printValue, "array('int8',null)"); printValue = undefined;
+    var buffer = _.pack(_schema, [0, 1, 2, 3, 4, 5, 6, 7]);
+    print(buffer.join(' '));
+        assert.equal(printValue, "0 1 2 3 4 5 6 7"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+        assert.equal(printValue, "[0,1,2,3,4,5,6,7]"); printValue = undefined;
+  });
+  it("arrayCreator():auto size int16 littleEndian = true", function () {
+    var _ = jpacks;
+    var _schema = _.array('int16', null);
+    var options = {
+      littleEndian: true
+    };
+    print(_.stringify(_schema))
+        assert.equal(printValue, "array('int16',null)"); printValue = undefined;
+    var buffer = _.pack(_schema, [0, 1, 2, 3, 4, 5, 6, 7], options);
+    print(buffer.join(' '));
+        assert.equal(printValue, "0 0 1 0 2 0 3 0 4 0 5 0 6 0 7 0"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer, options)));
+        assert.equal(printValue, "[0,1,2,3,4,5,6,7]"); printValue = undefined;
+  });
+  it("arrayCreator():auto size int16 littleEndian = false", function () {
+    var _ = jpacks;
+    var _schema = _.array('int16', null);
+    var options = {
+      littleEndian: false
+    };
+    print(_.stringify(_schema))
+        assert.equal(printValue, "array('int16',null)"); printValue = undefined;
+    var buffer = _.pack(_schema, [0, 1, 2, 3, 4, 5, 6, 7], options);
+    print(buffer.join(' '));
+        assert.equal(printValue, "0 0 0 1 0 2 0 3 0 4 0 5 0 6 0 7"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer, options)));
+        assert.equal(printValue, "[0,1,2,3,4,5,6,7]"); printValue = undefined;
+  });
+  it("arrayCreator():size fault tolerant", function () {
+    var _ = jpacks;
+    var _schema = _.array('int8', 4);
+    print(_.stringify(_schema))
+        assert.equal(printValue, "array('int8',4)"); printValue = undefined;
+    var buffer = _.pack(_schema, [0, 1, 2, 3, 4, 5, 6, 7]);
+    print(buffer.join(' '));
+        assert.equal(printValue, "0 1 2 3"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+        assert.equal(printValue, "[0,1,2,3]"); printValue = undefined;
+    var buffer = _.pack(_schema, [0, 1, 2]);
+    print(buffer.join(' '));
+        assert.equal(printValue, "0 1 2 0"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+        assert.equal(printValue, "[0,1,2,0]"); printValue = undefined;
+  });
 });
 describe("./src/schemas/bytes.js", function () {
   printValue = undefined;
@@ -98,6 +153,18 @@ describe("./src/schemas/bytes.js", function () {
     var _schema = jpacks.bytes(6);
     print(String(_schema));
         assert.equal(printValue, "array('uint8',6)"); printValue = undefined;
+    var value = [0, 1, 2, 3, 4, 5];
+    var buffer = jpacks.pack(_schema, value);
+    print(buffer.join(' '));
+        assert.equal(printValue, "0 1 2 3 4 5"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+        assert.equal(printValue, "[0,1,2,3,4,5]"); printValue = undefined;
+  });
+  it("bytes() auto size", function () {
+    var _ = jpacks;
+    var _schema = jpacks.bytes(null);
+    print(String(_schema));
+        assert.equal(printValue, "array('uint8',null)"); printValue = undefined;
     var value = [0, 1, 2, 3, 4, 5];
     var buffer = jpacks.pack(_schema, value);
     print(buffer.join(' '));
@@ -150,11 +217,22 @@ describe("./src/schemas/cstring.js", function () {
     print(JSON.stringify(_.unpack(_schema, buffer)));
         assert.equal(printValue, "\"Hello 你好！\""); printValue = undefined;
   });
+  it("cstringCreator():auto size", function () {
+    var _ = jpacks;
+    var _schema = _.cstring(null);
+    print(_.stringify(_schema));
+        assert.equal(printValue, "cstring(null)"); printValue = undefined;
+    var buffer = _.pack(_schema, 'Hello 你好！');
+    print(buffer.join(' '));
+        assert.equal(printValue, "72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+        assert.equal(printValue, "\"Hello 你好！\""); printValue = undefined;
+  });
   it("cstringCreator():pchar", function () {
     var _ = jpacks;
     var _schema = _.array(_.pchar, 'uint8');
     print(_.stringify(_schema));
-        assert.equal(printValue, "array(cstring(true),'uint8')"); printValue = undefined;
+        assert.equal(printValue, "array(cstring(null),'uint8')"); printValue = undefined;
     var buffer = _.pack(_schema, ['abc', 'defghijk', 'g']);
     print(buffer.join(' '));
         assert.equal(printValue, "3 97 98 99 0 100 101 102 103 104 105 106 107 0 103 0"); printValue = undefined;
@@ -452,11 +530,6 @@ describe("./schemas-extend/bigint.js", function () {
         assert.equal(printValue, "255 255 255 255 255 255 255 254"); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
         assert.equal(printValue, "\"-2\""); printValue = undefined;
-    var buffer = _.pack(_schema, "-0xff11233ff", { littleEndian: false });
-    print(buffer.join(' '));
-        assert.equal(printValue, "255 255 255 240 14 237 204 1"); printValue = undefined;
-    print(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
-        assert.equal(printValue, "\"-68469011455\""); printValue = undefined;
   });
 });
 describe("./schemas-extend/protobuf.js", function () {

@@ -1,9 +1,9 @@
-var jints = require('jints');
+var long = require('long');
 
 module.exports = function(Schema) {
   /*<define>*/
   function bytes2Hex(bytes) {
-    return bytes.map(function (byte) {
+    return bytes.map(function(byte) {
       return (0x100 + byte).toString(16).slice(1);
     }).join('');
   }
@@ -103,68 +103,36 @@ module.exports = function(Schema) {
 
     console.log(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
     // > "-2"
-
-    var buffer = _.pack(_schema, "-0xff11233ff", { littleEndian: false });
-
-    console.log(buffer.join(' '));
-    // > 255 255 255 240 14 237 204 1
-
-    console.log(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
-    // > "-68469011455"
     ```
    '''</example>'''
    */
   function bigintCreator(unsigned) {
     return new Schema({
       unpack: function(buffer, options, offsets) {
-        var bytes = Schema.unpack(Schema.bytes(8), buffer, options, offsets);
+        var bigint = Schema.unpack({
+          high: 'uint32',
+          low: 'uint32'
+        }, buffer, options, offsets);
+        bigint.unsigned = unsigned;
         if (options.littleEndian) {
-          bytes.reverse();
+          var temp = bigint.low;
+          bigint.low = bigint.high;
+          bigint.high = temp;
         }
-        var signed = '';
-        if (!unsigned && bytes[0] & (1 << 7)) {
-          signed = '-';
-          bytes = bytes.map(function (item) {
-            return ~item & 0xff;
-          });
-          hex = bytes2Hex(bytes);
-          hex = jints.add(hex, '1', 16);
-          hex = jints.fullZero(hex, 16).replace(/^.+(.{16})$/, '$1'); // 避免位数过高
-          bytes = hex2bytes(hex);
-        }
-        hex = bytes2Hex(bytes);
-        return signed + jints.digit(hex, 16, 10);
+        return long.fromValue(bigint).toString();
       },
       pack: function _pack(value, options, buffer) {
-        if (typeof value === 'number') {
-          value = String(parseInt(value));
-        } else {
-          value = String(value);
-        }
-        var signed = value.indexOf('-') >= 0;
-        var hex;
-        if (/^[-+]?0x/.test(value)) {
-          hex = value.replace(/^[-+]?0x/, ''); // 清除符号和前缀
-        } else {
-          hex = jints.digit(value, 10, 16);
-        }
-        console.log('value: %j', hex);
-
-        hex = jints.fullZero(hex, 16).replace(/^.+(.{16})$/, '$1'); // 避免位数过高
-        var bytes = hex2bytes(hex);
-        if (signed) {
-          bytes = bytes.map(function (item) {
-            return ~item & 0xff;
-          });
-          hex = bytes2Hex(bytes);
-          hex = jints.add(hex, '1', 16);
-          hex = jints.fullZero(hex, 16).replace(/^.+(.{16})$/, '$1'); // 避免位数过高
-          bytes = hex2bytes(hex);
-        }
+        var bigint = long.fromString(String(value), unsigned);
+        var bytes = [];
         if (options.littleEndian) {
-          bytes.reverse();
+          var temp = bigint.low;
+          bigint.low = bigint.high;
+          bigint.high = temp;
         }
-        Schema.pack(Schema.bytes(8), bytes, options, buffer);
+        Schema.pack({
+          high: 'uint32',
+          low: 'uint32'
+        }, bigint, options, buffer);
       },
       size: 8,
       name: unsigned ? 'uint64' : 'int64',

@@ -21,6 +21,21 @@ module.exports = function (Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [0,1,2,3,4,5]
     ```
+   * @example bytes() auto size
+    ```js
+    var _ = jpacks;
+    var _schema = jpacks.bytes(null);
+    console.log(String(_schema));
+    // > array('uint8',null)
+
+    var value = [0, 1, 2, 3, 4, 5];
+    var buffer = jpacks.pack(_schema, value);
+    console.log(buffer.join(' '));
+    // > 0 1 2 3 4 5
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [0,1,2,3,4,5]
+    ```
     '''</example>'''
    */
   function bytes(count) {

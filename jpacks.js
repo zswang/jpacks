@@ -5,8 +5,8 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.3.25
-   * @date 2015-11-06
+   * @version 0.4.1
+   * @date 2015-11-07
    */
   function createSchema() {
   /**
@@ -274,9 +274,9 @@
       return result.join();
     }
     function scan(obj) {
-      // if (obj === null) {
-      //   return 'null';
-      // }
+      if (obj === null) {
+        return 'null';
+      }
       if (!obj) {
         return obj;
       }
@@ -448,7 +448,7 @@
   /**
    * 声明指定长度或者下标的数组
    *
-   * @param {string|Schema} itemSchema 元素类型
+   * @param {string|Schema} item 元素类型
    * @param {string|Schema|number=} count 下标类型或个数
    * @return {Schema|Function} 返回数据结构
    '''<example>'''
@@ -491,49 +491,136 @@
     console.log(JSON.stringify(jpacks.unpack(_schema, buffer)));
     // > [12337,12851,0,0,0,0]
     ```
+   * @example arrayCreator():auto size int8
+    ```js
+    var _ = jpacks;
+    var _schema = _.array('int8', null);
+    console.log(_.stringify(_schema))
+    // > array('int8',null)
+    var buffer = _.pack(_schema, [0, 1, 2, 3, 4, 5, 6, 7]);
+    console.log(buffer.join(' '));
+    // > 0 1 2 3 4 5 6 7
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [0,1,2,3,4,5,6,7]
+    ```
+   * @example arrayCreator():auto size int16 littleEndian = true
+    ```js
+    var _ = jpacks;
+    var _schema = _.array('int16', null);
+    var options = {
+      littleEndian: true
+    };
+    console.log(_.stringify(_schema))
+    // > array('int16',null)
+    var buffer = _.pack(_schema, [0, 1, 2, 3, 4, 5, 6, 7], options);
+    console.log(buffer.join(' '));
+    // > 0 0 1 0 2 0 3 0 4 0 5 0 6 0 7 0
+    console.log(JSON.stringify(_.unpack(_schema, buffer, options)));
+    // > [0,1,2,3,4,5,6,7]
+    ```
+   * @example arrayCreator():auto size int16 littleEndian = false
+    ```js
+    var _ = jpacks;
+    var _schema = _.array('int16', null);
+    var options = {
+      littleEndian: false
+    };
+    console.log(_.stringify(_schema))
+    // > array('int16',null)
+    var buffer = _.pack(_schema, [0, 1, 2, 3, 4, 5, 6, 7], options);
+    console.log(buffer.join(' '));
+    // > 0 0 0 1 0 2 0 3 0 4 0 5 0 6 0 7
+    console.log(JSON.stringify(_.unpack(_schema, buffer, options)));
+    // > [0,1,2,3,4,5,6,7]
+    ```
+   * @example arrayCreator():size fault tolerant
+    ```js
+    var _ = jpacks;
+    var _schema = _.array('int8', 4);
+    console.log(_.stringify(_schema))
+    // > array('int8',4)
+    var buffer = _.pack(_schema, [0, 1, 2, 3, 4, 5, 6, 7]);
+    console.log(buffer.join(' '));
+    // > 0 1 2 3
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [0,1,2,3]
+    var buffer = _.pack(_schema, [0, 1, 2]);
+    console.log(buffer.join(' '));
+    // > 0 1 2 0
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [0,1,2,0]
+    ```
    '''</example>'''
    */
-  function arrayCreator(itemSchema, count) {
-    var size;
+  function arrayCreator(item, count) {
     var countSchema;
-    if (typeof count === 'number') {
-      size = itemSchema.size * count;
-    } else {
+    if (count !== 'number' && count !== null) { // static size && auto size
       countSchema = Schema.from(count);
     }
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
-        var length = count;
+        var length;
         if (countSchema) {
           length = Schema.unpack(countSchema, buffer, options, offsets);
+        } else {
+          length = count;
         }
-        if (itemSchema.array && options.littleEndian) {
-          size = countSchema.size * length;
-          /* TypeArray littleEndian is true */
-          var offset = offsets[0];
-          offsets[0] += size;
-          return [].slice.apply(new itemSchema.array(buffer, offset, length));
+        if (length === 0) {
+          return [];
         }
         var result = [];
-        for (var i = 0; i < length; i++) {
-          result.push(Schema.unpack(itemSchema, buffer, options, offsets));
+        var itemSchema = Schema.from(item);
+        if (itemSchema.array && (options.littleEndian || itemSchema.size === 1)) {
+          var size = length === null ? buffer.byteLength : itemSchema.size * length;
+          /* TypeArray littleEndian is true */
+          var offset = offsets[0];
+          var arrayBuffer = new ArrayBuffer(size);
+          var typeArray = new itemSchema.array(arrayBuffer);
+          var uint8Array = new Uint8Array(arrayBuffer);
+          uint8Array.set(
+            new Uint8Array(buffer, offset, Math.min(size, buffer.byteLength))
+          );
+          [].push.apply(result, typeArray);
+          offsets[0] += size;
+          return result;
+        }
+        if (length === null) { // auto size
+          var laseOffset;
+          while (offsets[0] < buffer.byteLength && laseOffset !== offsets[0]) {
+            laseOffset = offsets[0];
+            result.push(Schema.unpack(itemSchema, buffer, options, offsets));
+          }
+        } else {
+          for (var i = 0; i < length; i++) {
+            result.push(Schema.unpack(itemSchema, buffer, options, offsets));
+          }
         }
         return result;
       },
       pack: function _pack(value, options, buffer) {
-        var length = count;
+        var itemSchema = Schema.from(item);
+        if (!value && !countSchema) { // 数据不变
+          return;
+        }
+        var length;
         if (countSchema) {
           length = value ? value.length : 0;
           Schema.pack(countSchema, length, options, buffer);
+        } else {
+          length = count === null ? (value || []).length : count;
         }
-        if (itemSchema.array && options.littleEndian) {
-          size = itemSchema.size * length;
+        if (!value || !length) {
+          return;
+        }
+        if (itemSchema.array && (options.littleEndian || itemSchema.size === 1)) {
+          var size = itemSchema.size * length;
           /* TypeArray littleEndian is true */
           var arrayBuffer = new ArrayBuffer(size);
           var typeArray = new itemSchema.array(arrayBuffer);
-          typeArray.set(value);
+          typeArray.set(value.slice(0, length));
           var uint8Array = new Uint8Array(arrayBuffer);
           [].push.apply(buffer, uint8Array);
+          return;
         }
         for (var i = 0; i < length; i++) {
           Schema.pack(itemSchema, (value || [])[i], options, buffer);
@@ -541,10 +628,10 @@
       },
       namespace: 'array',
       args: arguments,
-      size: size
+      size: count === 'number' ? itemSchema.size * count : undefined
     });
   }
-  var array = Schema.together(arrayCreator, function (fn, args) {
+  var array = Schema.together(arrayCreator, function(fn, args) {
     fn.namespace = 'array';
     fn.args = args;
   });
@@ -573,6 +660,19 @@
     var _schema = jpacks.bytes(6);
     console.log(String(_schema));
     // > array('uint8',6)
+    var value = [0, 1, 2, 3, 4, 5];
+    var buffer = jpacks.pack(_schema, value);
+    console.log(buffer.join(' '));
+    // > 0 1 2 3 4 5
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > [0,1,2,3,4,5]
+    ```
+   * @example bytes() auto size
+    ```js
+    var _ = jpacks;
+    var _schema = jpacks.bytes(null);
+    console.log(String(_schema));
+    // > array('uint8',null)
     var value = [0, 1, 2, 3, 4, 5];
     var buffer = jpacks.pack(_schema, value);
     console.log(buffer.join(' '));
@@ -1030,12 +1130,24 @@
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > "Hello 你好！"
     ```
+   * @example cstringCreator():auto size
+    ```js
+    var _ = jpacks;
+    var _schema = _.cstring(null);
+    console.log(_.stringify(_schema));
+    // > cstring(null)
+    var buffer = _.pack(_schema, 'Hello 你好！');
+    console.log(buffer.join(' '));
+    // > 72 101 108 108 111 32 228 189 160 229 165 189 239 188 129 0
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > "Hello 你好！"
+    ```
    * @example cstringCreator():pchar
     ```js
     var _ = jpacks;
     var _schema = _.array(_.pchar, 'uint8');
     console.log(_.stringify(_schema));
-    // > array(cstring(true),'uint8')
+    // > array(cstring(null),'uint8')
     var buffer = _.pack(_schema, ['abc', 'defghijk', 'g']);
     console.log(buffer.join(' '));
     // > 3 97 98 99 0 100 101 102 103 104 105 106 107 0 103 0
@@ -1048,7 +1160,7 @@
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
         var bytes;
-        if (size === true) { // 自动大小
+        if (size === null) { // 自动大小
           bytes = new Uint8Array(buffer, offsets[0]);
         } else {
           bytes = Schema.unpack(Schema.bytes(size), buffer, options, offsets);
@@ -1058,19 +1170,15 @@
           byteSize++;
         }
         var result = Schema.unpack(Schema.string(byteSize), bytes, options);
-        if (size === true) {
+        if (size === null) {
           offsets[0] += byteSize + 1;
         }
         return result;
       },
       pack: function _pack(value, options, buffer) {
         var bytes = [0];
-        [].unshift.apply(bytes, Schema.stringBytes(value, options));
-        if (size === true) { // 自动大小
-          Schema.pack(Schema.bytes(bytes.length), bytes, options, buffer);
-        } else {
-          Schema.pack(Schema.bytes(size), bytes, options, buffer);
-        }
+        [].unshift.apply(bytes, Schema.stringBytes(value, options)); // 追加零字符
+        Schema.pack(Schema.bytes(size), bytes, options, buffer);
       },
       namespace: 'cstring',
       args: arguments
@@ -1081,7 +1189,7 @@
     fn.args = args;
   });
   Schema.register('cstring', cstring);
-  Schema.register('pchar', cstring(true));
+  Schema.register('pchar', cstring(null));
   /**
    * 创建条件类型
    *

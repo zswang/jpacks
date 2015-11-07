@@ -2,7 +2,7 @@
   "name": "jpacks",
   "title": "c struct packer",
   "description": "Binary data packing and unpacking.",
-  "version": "0.3.25",
+  "version": "0.4.1",
   "homepage": "http://github.com/zswang/jpacks",
   "main": "jpacks.js",
   "author": {
@@ -27,7 +27,7 @@
   "readmeFilename": "README.md",
   "dependencies": {
     "protobufjs": "^4.1.2",
-    "jints": "^0.0.4"
+    "long": "^3.0.1"
   },
   "devDependencies": {
     "mocha": "^2.0.1",

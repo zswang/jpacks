@@ -324,9 +324,9 @@ function createSchema() {
     }
 
     function scan(obj) {
-      // if (obj === null) {
-      //   return 'null';
-      // }
+      if (obj === null) {
+        return 'null';
+      }
       if (!obj) {
         return obj;
       }
