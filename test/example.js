@@ -175,7 +175,7 @@ describe("./src/schemas/bytes.js", function () {
 });
 describe("./src/schemas/cases.js", function () {
   printValue = undefined;
-  it("casesCreator", function () {
+  it("casesCreator():base", function () {
     var _ = jpacks;
     var _schema = {
       type: _.shortString,
@@ -202,6 +202,47 @@ describe("./src/schemas/cases.js", function () {
         assert.equal(printValue, "3 97 103 101 23"); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer)));
         assert.equal(printValue, "{\"type\":\"age\",\"data\":23}"); printValue = undefined;
+  });
+  it("casesCreator():function", function () {
+    var _ = jpacks;
+    var _schema = {
+      type: _.shortString,
+      data: _.depend('type', _.cases(function(type) {
+        switch (type) {
+          case 'age':
+            return _.byte;
+          case 'name':
+            return _.shortString;
+        }
+        return _.bytes(null);
+      }))
+    };
+    print(_.stringify(_schema));
+        assert.equal(printValue, "{type:string('uint8'),data:depend('type',cases($fn))}"); printValue = undefined;
+    var buffer = _.pack(_schema, {
+      type: 'name',
+      data: 'tom'
+    });
+    print(buffer.join(' '));
+        assert.equal(printValue, "4 110 97 109 101 3 116 111 109"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+        assert.equal(printValue, "{\"type\":\"name\",\"data\":\"tom\"}"); printValue = undefined;
+    var buffer = _.pack(_schema, {
+      type: 'age',
+      data: 23
+    });
+    print(buffer.join(' '));
+        assert.equal(printValue, "3 97 103 101 23"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+        assert.equal(printValue, "{\"type\":\"age\",\"data\":23}"); printValue = undefined;
+    var buffer = _.pack(_schema, {
+      type: 'other',
+      data: [1, 2, 3, 4, 5]
+    });
+    print(buffer.join(' '));
+        assert.equal(printValue, "5 111 116 104 101 114 1 2 3 4 5"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+        assert.equal(printValue, "{\"type\":\"other\",\"data\":[1,2,3,4,5]}"); printValue = undefined;
   });
 });
 describe("./src/schemas/cstring.js", function () {
@@ -312,6 +353,28 @@ describe("./src/schemas/enums.js", function () {
         assert.equal(printValue, "2"); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer)));
         assert.equal(printValue, "2"); printValue = undefined;
+  });
+});
+describe("./src/schemas/map.js", function () {
+  printValue = undefined;
+  it("mapCreator():base", function () {
+    var _ = jpacks;
+    var _schema = {
+      size1: 'uint16',
+      size2: 'uint16',
+      data1: _.map('size1', 'uint8'),
+      data2: _.map('size2', 'uint8')
+    };
+    print(_.stringify(_schema));
+        assert.equal(printValue, "{size1:'uint16',size2:'uint16',data1:map('size1','uint8'),data2:map('size2','uint8')}"); printValue = undefined;
+    var buffer = jpacks.pack(_schema, {
+      data1: [1, 2, 3, 4],
+      data2: [1, 2, 3, 4, 5, 6, 7, 8],
+    });
+    print(buffer.join(' '));
+        assert.equal(printValue, "4 0 8 0 1 2 3 4 1 2 3 4 5 6 7 8"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+        assert.equal(printValue, "{\"size1\":4,\"size2\":8,\"data1\":[1,2,3,4],\"data2\":[1,2,3,4,5,6,7,8]}"); printValue = undefined;
   });
 });
 describe("./src/schemas/number.js", function () {

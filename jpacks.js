@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.4.1
+   * @version 0.4.2
    * @date 2015-11-07
    */
   function createSchema() {
@@ -291,8 +291,8 @@
       }
       if (typeof obj === 'function') {
         if (!obj.name) {
-          obj.name = '_pack_fn' + (guid++);
-          Schema.def(obj.name, obj);
+          obj.namespace = '$fn';
+          return obj.namespace;
         }
       } else if (typeof obj === 'object') {
         var result = new obj.constructor();
@@ -571,14 +571,14 @@
         var result = [];
         var itemSchema = Schema.from(item);
         if (itemSchema.array && (options.littleEndian || itemSchema.size === 1)) {
-          var size = length === null ? buffer.byteLength : itemSchema.size * length;
-          /* TypeArray littleEndian is true */
           var offset = offsets[0];
+          var size = length === null ? buffer.byteLength - offset : itemSchema.size * length;
+          /* TypeArray littleEndian is true */
           var arrayBuffer = new ArrayBuffer(size);
           var typeArray = new itemSchema.array(arrayBuffer);
           var uint8Array = new Uint8Array(arrayBuffer);
           uint8Array.set(
-            new Uint8Array(buffer, offset, Math.min(size, buffer.byteLength))
+            new Uint8Array(buffer, offset, Math.min(size, buffer.byteLength - offset))
           );
           [].push.apply(result, typeArray);
           offsets[0] += size;
@@ -733,8 +733,13 @@
       unpack: function _unpack(buffer, options, offsets) {
         var result = new objectSchema.constructor();
         var $scope = options.$scope;
-        options.$scope = result;
+        options.$scope = {
+          target: result,
+          offsets: new objectSchema.constructor(),
+          schema: objectSchema
+        };
         keys.forEach(function (key) {
+          options.$scope.offsets[key] = offsets[0];
           result[key] = Schema.unpack(objectSchema[key], buffer, options, offsets);
         });
         options.$scope = $scope;
@@ -742,8 +747,13 @@
       },
       pack: function _pack(value, options, buffer) {
         var $scope = options.$scope;
-        options.$scope = value;
+        options.$scope = {
+          target: value,
+          offsets: new objectSchema.constructor(),
+          schema: objectSchema
+        };
         keys.forEach(function (key) {
+          options.$scope.offsets[key] = buffer.length;
           Schema.pack(objectSchema[key], value[key], options, buffer);
         });
         options.$scope = $scope;
@@ -1193,10 +1203,10 @@
   /**
    * 创建条件类型
    *
-   * @param {Array of array} patterns 数组第一元素表示命中条件，第二位类型
+   * @param {Array of array|Function} patterns 数组第一元素表示命中条件，第二位类型
    * @return {Schema} 返回条件类型
    '''<example>'''
-   * @example casesCreator
+   * @example casesCreator():base
     ```js
     var _ = jpacks;
     var _schema = {
@@ -1225,16 +1235,62 @@
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > {"type":"age","data":23}
     ```
+   * @example casesCreator():function
+    ```js
+    var _ = jpacks;
+    var _schema = {
+      type: _.shortString,
+      data: _.depend('type', _.cases(function(type) {
+        switch (type) {
+          case 'age':
+            return _.byte;
+          case 'name':
+            return _.shortString;
+        }
+        return _.bytes(null);
+      }))
+    };
+    console.log(_.stringify(_schema));
+    // > {type:string('uint8'),data:depend('type',cases($fn))}
+    var buffer = _.pack(_schema, {
+      type: 'name',
+      data: 'tom'
+    });
+    console.log(buffer.join(' '));
+    // > 4 110 97 109 101 3 116 111 109
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"type":"name","data":"tom"}
+    var buffer = _.pack(_schema, {
+      type: 'age',
+      data: 23
+    });
+    console.log(buffer.join(' '));
+    // > 3 97 103 101 23
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"type":"age","data":23}
+    var buffer = _.pack(_schema, {
+      type: 'other',
+      data: [1, 2, 3, 4, 5]
+    });
+    console.log(buffer.join(' '));
+    // > 5 111 116 104 101 114 1 2 3 4 5
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"type":"other","data":[1,2,3,4,5]}
+    ```
    '''</example>'''
   */
   function casesCreator(patterns, value) {
-    for (var i = 0; i < patterns.length; i++) {
-      if (patterns[i][0] === value) {
-        return patterns[i][1];
+    if (typeof patterns === 'function') {
+      return patterns(value);
+    } else if (patterns instanceof Array) {
+      for (var i = 0; i < patterns.length; i++) {
+        if (patterns[i][0] === value) {
+          return patterns[i][1];
+        }
       }
     }
   }
-  var cases = Schema.together(casesCreator, function (fn, args) {
+  var cases = Schema.together(casesCreator, function(fn, args) {
     fn.namespace = 'cases';
     fn.args = args;
   });
@@ -1277,20 +1333,11 @@
   function dependCreator(field, schemaCreator) {
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
-        if (!options.$scope) {
-          throw new Error('Unpack must running in object.');
-        }
-        var fieldValue = options.$scope[field];
-        if (typeof fieldValue === 'undefined') {
-          throw new Error('Field "' + field + '" is undefined.');
-        }
+        var fieldValue = options.$scope.target[field];
         return Schema.unpack(schemaCreator(fieldValue), buffer, options, offsets);
       },
       pack: function _pack(value, options, buffer) {
-        var fieldValue = options.$scope[field];
-        if (typeof fieldValue === 'undefined') {
-          throw new Error('Field "' + field + '" is undefined.');
-        }
+        var fieldValue = options.$scope.target[field];
         Schema.pack(schemaCreator(fieldValue), value, options, buffer);
       },
       namespace: 'depend',
@@ -1444,6 +1491,65 @@
     fn.args = args;
   });
   Schema.register('virtual', virtual);
+  /**
+   * 声明映射文件
+   *
+   * @param {string} field 字段名，即：元素的个数
+   * @param {string|Schema} item 元素类型
+   * @return {Schema|Function} 返回数据结构
+   '''<example>'''
+   * @example mapCreator():base
+    ```js
+    var _ = jpacks;
+    var _schema = {
+      size1: 'uint16',
+      size2: 'uint16',
+      data1: _.map('size1', 'uint8'),
+      data2: _.map('size2', 'uint8')
+    };
+    console.log(_.stringify(_schema));
+    // > {size1:'uint16',size2:'uint16',data1:map('size1','uint8'),data2:map('size2','uint8')}
+    var buffer = jpacks.pack(_schema, {
+      data1: [1, 2, 3, 4],
+      data2: [1, 2, 3, 4, 5, 6, 7, 8],
+    });
+    console.log(buffer.join(' '));
+    // > 4 0 8 0 1 2 3 4 1 2 3 4 5 6 7 8
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"size1":4,"size2":8,"data1":[1,2,3,4],"data2":[1,2,3,4,5,6,7,8]}
+    ```
+   '''</example>'''
+   */
+  function mapCreator(field, item) {
+    return new Schema({
+      unpack: function _unpack(buffer, options, offsets) {
+        var fieldValue = options.$scope.target[field];
+        var itemSchema = Schema.from(item);
+        return Schema.unpack(Schema.array(itemSchema, fieldValue), buffer, options, offsets);
+      },
+      pack: function _pack(value, options, buffer) {
+        var fieldSchema = options.$scope.schema[field];
+        var itemSchema = Schema.from(item);
+        var bytes = Schema.pack(fieldSchema, value.length, options);
+        var offset = options.$scope.offsets[field];
+        for (var i = 0; i < bytes.length; i++) {
+          buffer[offset + i] = bytes[i];
+        }
+        Schema.pack(Schema.array(itemSchema, null), value, options, buffer);
+      },
+      namespace: 'map',
+      args: arguments
+    });
+  }
+  var map = Schema.together(mapCreator, function (fn, args) {
+    fn.namespace = 'map';
+    fn.args = args;
+  });
+  Schema.register('map', map);
+  function mapArray(field, itemSchema) {
+    return map(field, Schema.array(itemSchema));
+  }
+  Schema.register('mapArray', mapArray);
     return Schema;
   }
   var root = create();

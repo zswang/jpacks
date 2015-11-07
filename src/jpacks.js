@@ -53,6 +53,7 @@
     require('./schemas/parse')(Schema);
 
     require('./schemas/virtual')(Schema);
+    require('./schemas/map')(Schema);
     /*</jdists>*/
 
     return Schema;

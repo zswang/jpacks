@@ -49,20 +49,26 @@ module.exports = function (Schema) {
 
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
+        /*<safe>*/
         if (!options.$scope) {
           throw new Error('Unpack must running in object.');
         }
-        var fieldValue = options.$scope[field];
+        /*</safe>*/
+        var fieldValue = options.$scope.target[field];
+        /*<safe>*/
         if (typeof fieldValue === 'undefined') {
           throw new Error('Field "' + field + '" is undefined.');
         }
+        /*</safe>*/
         return Schema.unpack(schemaCreator(fieldValue), buffer, options, offsets);
       },
       pack: function _pack(value, options, buffer) {
-        var fieldValue = options.$scope[field];
+        var fieldValue = options.$scope.target[field];
+        /*<safe>*/
         if (typeof fieldValue === 'undefined') {
           throw new Error('Field "' + field + '" is undefined.');
         }
+        /*</safe>*/
         Schema.pack(schemaCreator(fieldValue), value, options, buffer);
       },
       namespace: 'depend',

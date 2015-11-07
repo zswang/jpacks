@@ -342,8 +342,8 @@ function createSchema() {
 
       if (typeof obj === 'function') {
         if (!obj.name) {
-          obj.name = '_pack_fn' + (guid++);
-          Schema.def(obj.name, obj);
+          obj.namespace = '$fn';
+          return obj.namespace;
         }
       } else if (typeof obj === 'object') {
         var result = new obj.constructor();

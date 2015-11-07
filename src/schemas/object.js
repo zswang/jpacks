@@ -56,8 +56,13 @@ module.exports = function (Schema) {
       unpack: function _unpack(buffer, options, offsets) {
         var result = new objectSchema.constructor();
         var $scope = options.$scope;
-        options.$scope = result;
+        options.$scope = {
+          target: result,
+          offsets: new objectSchema.constructor(),
+          schema: objectSchema
+        };
         keys.forEach(function (key) {
+          options.$scope.offsets[key] = offsets[0];
           result[key] = Schema.unpack(objectSchema[key], buffer, options, offsets);
         });
         options.$scope = $scope;
@@ -65,8 +70,13 @@ module.exports = function (Schema) {
       },
       pack: function _pack(value, options, buffer) {
         var $scope = options.$scope;
-        options.$scope = value;
+        options.$scope = {
+          target: value,
+          offsets: new objectSchema.constructor(),
+          schema: objectSchema
+        };
         keys.forEach(function (key) {
+          options.$scope.offsets[key] = buffer.length;
           Schema.pack(objectSchema[key], value[key], options, buffer);
         });
         options.$scope = $scope;

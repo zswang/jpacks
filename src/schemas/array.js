@@ -158,15 +158,15 @@ module.exports = function(Schema) {
         var result = [];
         var itemSchema = Schema.from(item);
         if (itemSchema.array && (options.littleEndian || itemSchema.size === 1)) {
-          var size = length === null ? buffer.byteLength : itemSchema.size * length;
-          /* TypeArray littleEndian is true */
           var offset = offsets[0];
+          var size = length === null ? buffer.byteLength - offset : itemSchema.size * length;
+          /* TypeArray littleEndian is true */
 
           var arrayBuffer = new ArrayBuffer(size);
           var typeArray = new itemSchema.array(arrayBuffer);
           var uint8Array = new Uint8Array(arrayBuffer);
           uint8Array.set(
-            new Uint8Array(buffer, offset, Math.min(size, buffer.byteLength))
+            new Uint8Array(buffer, offset, Math.min(size, buffer.byteLength - offset))
           );
           [].push.apply(result, typeArray);
           offsets[0] += size;
