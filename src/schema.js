@@ -307,8 +307,6 @@ function createSchema() {
   }
   Schema.together = together;
 
-  var guid = 0;
-
   /**
    * 获取对象的结构表达式
    *

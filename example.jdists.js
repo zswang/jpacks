@@ -45,7 +45,7 @@ function (content) {
     '  it("$1", function () {');
   content = content.replace(/^\s*```js\s*$/mg, '');
   content = content.replace(/\/\/ -?>\s*(.*)/gm, function (all, output) {
-    return '    assert.equal(printValue, ' + JSON.stringify(output) + '); printValue = undefined;'
+    return 'assert.equal(printValue, ' + JSON.stringify(output) + '); printValue = undefined;'
   });
   content = content.replace(/console\.log/g, 'print');
   content = content.replace(/^\s*```\s*$/mg,
