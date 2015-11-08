@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.4.4
+   * @version 0.4.5
    * @date 2015-11-08
    */
   function createSchema() {
@@ -290,7 +290,6 @@
     return result;
   }
   Schema.together = together;
-  var guid = 0;
   /**
    * 获取对象的结构表达式
    *
