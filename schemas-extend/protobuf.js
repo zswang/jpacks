@@ -247,7 +247,8 @@ module.exports = function(Schema) {
           return;
         }
         var message = protoify(messager, value, options);
-        var bytes = new Uint8Array(message.toArrayBuffer());
+        var bytes = [];
+        [].push.apply(bytes, new Uint8Array(message.toArrayBuffer()));
         Schema.pack(Schema.bytes(size), bytes, options, buffer);
       },
       namespace: 'protobuf',
