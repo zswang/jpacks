@@ -2,20 +2,6 @@ var long = require('long');
 
 module.exports = function(Schema) {
   /*<define>*/
-  function bytes2Hex(bytes) {
-    return bytes.map(function(byte) {
-      return (0x100 + byte).toString(16).slice(1);
-    }).join('');
-  }
-
-  function hex2bytes(hex) {
-    var bytes = [];
-    hex.replace(/../g, function(all) {
-      bytes.push(parseInt(all, 16));
-    });
-    return bytes;
-  }
-
   /**
    * int64 类型
    *
