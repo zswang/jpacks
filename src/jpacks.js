@@ -48,7 +48,6 @@
 
     require('./schemas/cstring')(Schema);
 
-    require('./schemas/cases')(Schema);
     require('./schemas/depend')(Schema);
     require('./schemas/parse')(Schema);
 

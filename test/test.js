@@ -6,8 +6,8 @@ var zlib = require('../schemas-extend/zlib');
 zlib(jpacks);
 
 // coverage
-describe('fixtures', function () {
-  it('jpacks.cases()', function () {
+describe('fixtures', function() {
+  it('jpacks.cases()', function() {
     jpacks.register('Point', {
       x: 'int32',
       y: 'int32'
@@ -19,10 +19,14 @@ describe('fixtures', function () {
     });
     jpacks.register('CaseType', {
       type: 'uint8',
-      data: jpacks.depend('type', jpacks.cases([
-        [1, 'Point'],
-        [2, 'Polar']
-      ]))
+      data: jpacks.depend('type', function(type) {
+        switch (type) {
+          case 1:
+            return 'Point';
+          case 2:
+            return 'Polar';
+        }
+      })
     });
 
     var value1 = {
@@ -48,7 +52,7 @@ describe('fixtures', function () {
     var value4 = jpacks.unpack('CaseType', buffer3);
     assert.equal(JSON.stringify(value4), JSON.stringify(value3));
   });
-  it('jpacks.union()', function () {
+  it('jpacks.union()', function() {
     jpacks.register('UnionShortString', jpacks.union({
       length: jpacks.uint8,
       content: jpacks.shortString
@@ -63,7 +67,7 @@ describe('fixtures', function () {
     assert.equal(JSON.stringify(value1), JSON.stringify(value2));
   });
 
-  it('jpacks.register("Point")', function () {
+  it('jpacks.register("Point")', function() {
     jpacks.register('Point', {
       x: 'int32',
       y: 'int32'
@@ -77,7 +81,7 @@ describe('fixtures', function () {
     assert.equal(JSON.stringify(value1), JSON.stringify(value2));
   });
 
-  it('jpacks.register("User")', function () {
+  it('jpacks.register("User")', function() {
     jpacks.register('User', {
       age: 'uint8',
       token: jpacks.array('byte', 10),
@@ -116,7 +120,7 @@ describe('fixtures', function () {
   });
 });
 
-describe('pack', function () {
+describe('pack', function() {
   // var binary = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
   var data = [
     [
@@ -147,13 +151,13 @@ describe('pack', function () {
     }]
   ];
 
-  data.forEach(function (item) {
+  data.forEach(function(item) {
     var type = item[0];
     var value = item[1];
     var options = {
       littleEndian: item[2]
     };
-    it(util.format('type: %j, value: %j, options', type, value, options), function () {
+    it(util.format('type: %j, value: %j, options', type, value, options), function() {
       var buffer = jpacks.pack(type, value, options);
       var value2 = jpacks.unpack(type, buffer, options);
       var buffer2 = jpacks.pack(type, jpacks.unpack(type, buffer, options), options);

@@ -51,13 +51,17 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = _.object({
       name: _.shortString,
-      welcome: _.depend('name', _.cases([
-        ['zswang', _.depend('name', _.virtual('Hello '))],
-        ['wang', _.depend('name', _.virtual('Hi '))]
-      ]))
+      welcome: _.depend('name', function (name) {
+        switch (name) {
+          case 'zswang':
+            return _.depend('name', _.virtual('Hello '));
+          case 'wang':
+            return _.depend('name', _.virtual('Hi '));
+        }
+      })
     });
     console.log(_.stringify(_schema))
-    // > object({name:string('uint8'),welcome:depend('name',cases([['zswang',depend('name',virtual('Hello '))],['wang',depend('name',virtual('Hi '))]]))})
+    // > object({name:string('uint8'),welcome:depend('name',$fn)})
 
     var buffer = _.pack(_schema, {
       name: 'zswang'
