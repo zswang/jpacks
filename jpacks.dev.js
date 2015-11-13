@@ -5,8 +5,8 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.5.6
-   * @date 2015-11-10
+   * @version 0.5.7
+   * @date 2015-11-13
    */
   function createSchema() {
   /**
@@ -1014,19 +1014,10 @@
    * param {string} str 原始字符串
    */
   function encodeUTF8(str) {
-    return String(str).replace(
-      /[\u0080-\u07ff]/g,
-      function (c) {
-        var cc = c.charCodeAt(0);
-        return String.fromCharCode(0xc0 | cc >> 6, 0x80 | cc & 0x3f);
-      }
-    ).replace(
-      /[\u0800-\uffff]/g,
-      function (c) {
-        var cc = c.charCodeAt(0);
-        return String.fromCharCode(0xe0 | cc >> 12, 0x80 | cc >> 6 & 0x3f, 0x80 | cc & 0x3f);
-      }
-    );
+    if (/[\u0080-\uffff]/.test(str)) {
+      return unescape(encodeURIComponent(str));
+    }
+    return str;
   }
   /**
    * 对 utf8 字符串进行解码
@@ -1034,19 +1025,11 @@
    * @param {string} str 编码字符串
    */
   function decodeUTF8(str) {
-    return String(str).replace(
-      /[\u00c0-\u00df][\u0080-\u00bf]/g,
-      function (c) {
-        var cc = (c.charCodeAt(0) & 0x1f) << 6 | (c.charCodeAt(1) & 0x3f);
-        return String.fromCharCode(cc);
-      }
-    ).replace(
-      /[\u00e0-\u00ef][\u0080-\u00bf][\u0080-\u00bf]/g,
-      function (c) {
-        var cc = (c.charCodeAt(0) & 0x0f) << 12 | (c.charCodeAt(1) & 0x3f) << 6 | (c.charCodeAt(2) & 0x3f);
-        return String.fromCharCode(cc);
-      }
-    );
+    if (/[\u00c0-\u00df][\u0080-\u00bf]/.test(str) ||
+      /[\u00e0-\u00ef][\u0080-\u00bf][\u0080-\u00bf]/.test(str)) {
+      return decodeURIComponent(escape(str));
+    }
+    return str;
   }
   /**
    * 将字符串转换为字节数组
