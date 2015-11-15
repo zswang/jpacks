@@ -7,17 +7,17 @@ module.exports = function (Schema) {
    * @param {string|Schema} item 元素类型
    * @return {Schema|Function} 返回数据结构
    '''<example>'''
-   * @example mapCreator():base
+   * @example linkCreator():base
     ```js
     var _ = jpacks;
     var _schema = {
       size1: 'uint16',
       size2: 'uint16',
-      data1: _.map('size1', 'uint8'),
-      data2: _.map('size2', 'uint8')
+      data1: _.link('size1', 'uint8'),
+      data2: _.link('size2', 'uint8')
     };
     console.log(_.stringify(_schema));
-    // > {size1:'uint16',size2:'uint16',data1:map('size1','uint8'),data2:map('size2','uint8')}
+    // > {size1:'uint16',size2:'uint16',data1:link('size1','uint8'),data2:link('size2','uint8')}
 
     var buffer = jpacks.pack(_schema, {
       data1: [1, 2, 3, 4],
@@ -30,7 +30,7 @@ module.exports = function (Schema) {
     ```
    '''</example>'''
    */
-  function mapCreator(field, item) {
+  function linkCreator(field, item) {
     /*<safe>*/
     if (typeof field !== 'string') {
       throw new Error('Parameter "field" must be a string.');
@@ -73,19 +73,19 @@ module.exports = function (Schema) {
         }
         Schema.pack(Schema.array(itemSchema, null), value, options, buffer);
       },
-      namespace: 'map',
+      namespace: 'link',
       args: arguments
     });
   }
-  var map = Schema.together(mapCreator, function (fn, args) {
-    fn.namespace = 'map';
+  var link = Schema.together(linkCreator, function (fn, args) {
+    fn.namespace = 'link';
     fn.args = args;
   });
-  Schema.register('map', map);
+  Schema.register('link', link);
 
-  function mapArray(field, itemSchema) {
-    return map(field, Schema.array(itemSchema));
+  function linkArray(field, itemSchema) {
+    return link(field, Schema.array(itemSchema));
   }
-  Schema.register('mapArray', mapArray);
+  Schema.register('linkArray', linkArray);
   /*</define>*/
 };

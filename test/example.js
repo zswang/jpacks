@@ -283,18 +283,18 @@ describe("./src/schemas/enums.js", function () {
     assert.equal(printValue, "2"); printValue = undefined;
   });
 });
-describe("./src/schemas/map.js", function () {
+describe("./src/schemas/link.js", function () {
   printValue = undefined;
-  it("mapCreator():base", function () {
+  it("linkCreator():base", function () {
     var _ = jpacks;
     var _schema = {
       size1: 'uint16',
       size2: 'uint16',
-      data1: _.map('size1', 'uint8'),
-      data2: _.map('size2', 'uint8')
+      data1: _.link('size1', 'uint8'),
+      data2: _.link('size2', 'uint8')
     };
     print(_.stringify(_schema));
-    assert.equal(printValue, "{size1:'uint16',size2:'uint16',data1:map('size1','uint8'),data2:map('size2','uint8')}"); printValue = undefined;
+    assert.equal(printValue, "{size1:'uint16',size2:'uint16',data1:link('size1','uint8'),data2:link('size2','uint8')}"); printValue = undefined;
     var buffer = jpacks.pack(_schema, {
       data1: [1, 2, 3, 4],
       data2: [1, 2, 3, 4, 5, 6, 7, 8],

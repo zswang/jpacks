@@ -5,8 +5,8 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.5.7
-   * @date 2015-11-13
+   * @version 0.6.2
+   * @date 2015-11-15
    */
   function createSchema() {
   /**
@@ -1389,17 +1389,17 @@
    * @param {string|Schema} item 元素类型
    * @return {Schema|Function} 返回数据结构
    '''<example>'''
-   * @example mapCreator():base
+   * @example linkCreator():base
     ```js
     var _ = jpacks;
     var _schema = {
       size1: 'uint16',
       size2: 'uint16',
-      data1: _.map('size1', 'uint8'),
-      data2: _.map('size2', 'uint8')
+      data1: _.link('size1', 'uint8'),
+      data2: _.link('size2', 'uint8')
     };
     console.log(_.stringify(_schema));
-    // > {size1:'uint16',size2:'uint16',data1:map('size1','uint8'),data2:map('size2','uint8')}
+    // > {size1:'uint16',size2:'uint16',data1:link('size1','uint8'),data2:link('size2','uint8')}
     var buffer = jpacks.pack(_schema, {
       data1: [1, 2, 3, 4],
       data2: [1, 2, 3, 4, 5, 6, 7, 8],
@@ -1411,7 +1411,7 @@
     ```
    '''</example>'''
    */
-  function mapCreator(field, item) {
+  function linkCreator(field, item) {
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
         var fieldValue = options.$scope.target[field];
@@ -1428,19 +1428,19 @@
         }
         Schema.pack(Schema.array(itemSchema, null), value, options, buffer);
       },
-      namespace: 'map',
+      namespace: 'link',
       args: arguments
     });
   }
-  var map = Schema.together(mapCreator, function (fn, args) {
-    fn.namespace = 'map';
+  var link = Schema.together(linkCreator, function (fn, args) {
+    fn.namespace = 'link';
     fn.args = args;
   });
-  Schema.register('map', map);
-  function mapArray(field, itemSchema) {
-    return map(field, Schema.array(itemSchema));
+  Schema.register('link', link);
+  function linkArray(field, itemSchema) {
+    return link(field, Schema.array(itemSchema));
   }
-  Schema.register('mapArray', mapArray);
+  Schema.register('linkArray', linkArray);
     return Schema;
   }
   var root = create();
