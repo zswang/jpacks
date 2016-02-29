@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>jpacks</title>
+</head>
+<body>
+  <div></div>
+  <div></div>
+</body>
+<script src="../jpacks.js"></script>
+<script>
+(function () {
+  var _ = jpacks;
+  _.def('Point', {
+    x: _.int32,
+    y: _.int32,
+    tag: _.cstring(null)
+  });
+
+  var buffer = _.pack('Point', {
+    x: 30,
+    y: 190,
+    tag: '北京 BeiJing'
+  });
+
+  document.querySelector('div:nth-of-type(1)').innerHTML = JSON.stringify(buffer);
+
+  var data = _.unpack('Point', buffer);
+
+  document.querySelector('div:nth-of-type(2)').innerHTML = JSON.stringify(data);
+})();
+</script>
+</html>

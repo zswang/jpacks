@@ -2,7 +2,7 @@
   "name": "jpacks",
   "title": "c struct packer",
   "description": "Binary data packing and unpacking.",
-  "version": "0.6.2",
+  "version": "0.6.3",
   "homepage": "http://github.com/zswang/jpacks",
   "main": "jpacks.js",
   "author": {
@@ -16,9 +16,14 @@
   "keywords": [
     "c",
     "struct",
-    "serialization",
+    "serialize",
     "pack",
-    "unpack"
+    "unpack",
+    "binary",
+    "parse",
+    "structure",
+    "packets",
+    "schema"
   ],
   "bugs": {
     "url": "https://github.com/zswang/jpacks/issues"
