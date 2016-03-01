@@ -1,28 +1,13 @@
 module.exports = function (Schema) {
   /*<define>*/
-  /**
-   * 对字符串进行 utf8 编码
-   *
-   * param {string} str 原始字符串
-   */
-  function encodeUTF8(str) {
-    if (/[\u0080-\uffff]/.test(str)) {
-      return unescape(encodeURIComponent(str));
-    }
-    return str;
-  }
-  /**
-   * 对 utf8 字符串进行解码
-   *
-   * @param {string} str 编码字符串
-   */
-  function decodeUTF8(str) {
-    if (/[\u00c0-\u00df][\u0080-\u00bf]/.test(str) ||
-      /[\u00e0-\u00ef][\u0080-\u00bf][\u0080-\u00bf]/.test(str)) {
-      return decodeURIComponent(escape(str));
-    }
-    return str;
-  }
+
+  /*<jdists encoding="fndep" import="../../node_modules/jstrs/jstrs.js"
+    depend="encodeUTF8,decodeUTF8">*/
+  var jstrs = require('jstrs');
+  var encodeUTF8 = jstrs.encodeUTF8;
+  var decodeUTF8 = jstrs.decodeUTF8;
+  /*</jdists>*/
+
   /**
    * 将字符串转换为字节数组
    *

@@ -5,8 +5,8 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.6.3
-   * @date 2016-02-29
+   * @version 0.6.5
+   * @date 2016-03-01
    */
   function createSchema() {
   /**
@@ -1008,10 +1008,18 @@
     fn.args = args;
   });
   Schema.register('enums', enums);
+  /*<function name="encodeUTF8">*/
   /**
    * 对字符串进行 utf8 编码
    *
    * param {string} str 原始字符串
+   '''<example>'''
+   * @example encodeUTF8():base
+    ```js
+    console.log(jstrs.encodeUTF8('汉'));
+    // > æ±
+    ```
+   '''</example>'''
    */
   function encodeUTF8(str) {
     if (/[\u0080-\uffff]/.test(str)) {
@@ -1019,10 +1027,19 @@
     }
     return str;
   }
+  /*</function>*/
+  /*<function name="decodeUTF8">*/
   /**
    * 对 utf8 字符串进行解码
    *
    * @param {string} str 编码字符串
+   '''<example>'''
+   * @example decodeUTF8():base
+    ```js
+    console.log(jstrs.decodeUTF8('æ±'));
+    // > 汉
+    ```
+   '''</example>'''
    */
   function decodeUTF8(str) {
     if (/[\u00c0-\u00df][\u0080-\u00bf]/.test(str) ||
@@ -1031,6 +1048,7 @@
     }
     return str;
   }
+  /*</function>*/
   /**
    * 将字符串转换为字节数组
    *
