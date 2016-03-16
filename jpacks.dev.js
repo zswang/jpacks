@@ -5,8 +5,8 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.6.5
-   * @date 2016-03-01
+   * @version 0.6.10
+   * @date 2016-03-16
    */
   function createSchema() {
   /**

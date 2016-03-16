@@ -618,6 +618,23 @@ describe("./schemas-extend/protobuf.js", function () {
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, "[{\"text\":\"a\"},{\"text\":\"b\"}]"); printValue = undefined;
   });
+  it("protobufCreator():repeated bytes", function () {
+    var _ = jpacks;
+    var _schema =
+      _.protobuf('message BytesArray { repeated bytes items = 1; }', 'BytesArray', 'uint16');
+    print(_.stringify(_schema))
+    assert.equal(printValue, "protobuf('message BytesArray { repeated bytes items = 1; }','BytesArray','uint16')"); printValue = undefined;
+    _.setDefaultOptions({
+      protobuf_bytesAsString: false
+    });
+    var buffer = _.pack(_schema, {
+      items: [[1, 2, 3, 4], [5, 6, 7, 8], '12345678']
+    });
+    print(buffer.join(' '));
+    assert.equal(printValue, "22 0 10 4 1 2 3 4 10 4 5 6 7 8 10 8 49 50 51 52 53 54 55 56"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, "{\"items\":[[1,2,3,4],[5,6,7,8],[49,50,51,52,53,54,55,56]]}"); printValue = undefined;
+  });
 });
 describe("./schemas-extend/zlib.js", function () {
   printValue = undefined;

@@ -2,6 +2,15 @@ var protobufjs = require('protobufjs');
 
 module.exports = function(Schema) {
   /*<define>*/
+  function bytesify(value, options) {
+    if (value instanceof Array) {
+      return new Buffer(value);
+    } else if (typeof value === 'string') {
+      return new Buffer(Schema.stringBytes(value, options));
+    } else {
+      return new Buffer([]);
+    }
+  }
   /**
    * 将 JSON 数据填入 protobuf 结构中
    *
@@ -25,14 +34,28 @@ module.exports = function(Schema) {
         return;
       }
       var value = json[key];
-      if (type.type.name === 'bytes') {
-        if (value instanceof Array) {
-          result[key] = new Buffer(value);
-          return;
-        } else if (typeof value === 'string') {
-          result[key] = new Buffer(Schema.stringBytes(value, options));
-          return;
+
+      if (type.repeated) { // 数组类型
+        var items = [];
+        value = value || [];
+        for (var i = 0; i < value.length; i++) {
+          if (!type.resolvedType) {
+            if (type.type.name === 'bytes') {
+              items.push(bytesify(value[i], options));
+            } else {
+              items.push(value[i]);
+            }
+          } else {
+            items.push(protoify(type.resolvedType.clazz, value[i], options));
+          }
         }
+        result[key] = items;
+        return;
+      }
+
+      if (type.type.name === 'bytes') {
+        result[key] = bytesify(value, options);
+        return;
       }
 
       if (!type.resolvedType) { // 基础类型
@@ -40,27 +63,24 @@ module.exports = function(Schema) {
         return;
       }
 
-      if (type.repeated) { // 数组类型
-        var items = [];
-        value = value || [];
-        for (var i = 0; i < value.length; i++) {
-          items.push(protoify(type.resolvedType.clazz, value[i], options));
-        }
-        result[key] = items;
-      } else {
-        result[key] = protoify(type.resolvedType.clazz, json[key], options);
-      }
+      result[key] = protoify(type.resolvedType.clazz, json[key], options);
     });
     return new messager(result);
   }
-
+  function bytesprase(value, options) {
+    if (options.protobuf_bytesAsString) {
+      return Schema.unpack(Schema.string(value.length), value, options);
+    } else {
+      return Schema.unpack(Schema.bytes(value.length), value, options);
+    }
+  }
   /**
    * 清洗 protobuf 数据
    *
    * @param {Message of class} messager protobuf 数据类型
    * @param {Object} json JSON 数据
    */
-  function jsonify(messager, json, options) {
+  function jsonparse(messager, json, options) {
     if (!json || !messager) {
       return json;
     }
@@ -84,25 +104,29 @@ module.exports = function(Schema) {
         delete json[key];
         return;
       }
-      if (type.type.name === 'bytes') {
-        if (options.protobuf_bytesAsString) {
-          json[key] = Schema.unpack(Schema.string(value.length), value, options);
-        } else {
-          json[key] = Schema.unpack(Schema.bytes(value.length), value, options);
-        }
-        return;
-      }
-      if (!type.resolvedType) { // 基础类型
-        return;
-      }
       if (type.repeated) { // 数组类型
         value = value || [];
         for (var i = 0; i < value.length; i++) {
-          jsonify(type.resolvedType.clazz, value[i], options);
+          if (!type.resolvedType) {
+            if (type.type.name === 'bytes') {
+              value[i] = bytesprase(value[i], options);
+            }
+          } else {
+            jsonparse(type.resolvedType.clazz, value[i], options);
+          }
         }
-      } else {
-        jsonify(type.resolvedType.clazz, json[key], options);
+        return;
       }
+
+      if (type.type.name === 'bytes') {
+        json[key] = bytesprase(value, options);
+        return;
+      }
+
+      if (!type.resolvedType) { // 基础类型
+        return;
+      }
+      jsonparse(type.resolvedType.clazz, json[key], options);
     });
     return json;
   }
@@ -203,7 +227,6 @@ module.exports = function(Schema) {
       'int8'
     );
     console.log(_.stringify(_schema))
-
     // > array(protobuf('message Value { required string text = 1; }','Value','uint16'),'int8')
 
     _.setDefaultOptions({
@@ -221,6 +244,29 @@ module.exports = function(Schema) {
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [{"text":"a"},{"text":"b"}]
+    ```
+   * @example protobufCreator():repeated bytes
+    ```js
+    var _ = jpacks;
+    var _schema =
+      _.protobuf('message BytesArray { repeated bytes items = 1; }', 'BytesArray', 'uint16');
+
+    console.log(_.stringify(_schema))
+    // > protobuf('message BytesArray { repeated bytes items = 1; }','BytesArray','uint16')
+
+    _.setDefaultOptions({
+      protobuf_bytesAsString: false
+    });
+
+    var buffer = _.pack(_schema, {
+      items: [[1, 2, 3, 4], [5, 6, 7, 8], '12345678']
+    });
+
+    console.log(buffer.join(' '));
+    // > 22 0 10 4 1 2 3 4 10 4 5 6 7 8 10 8 49 50 51 52 53 54 55 56
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"items":[[1,2,3,4],[5,6,7,8],[49,50,51,52,53,54,55,56]]}
     ```
    '''</example>'''
    */
@@ -240,7 +286,7 @@ module.exports = function(Schema) {
         if (byteSize <= 0) {
           return null;
         }
-        return jsonify(messager, rs.toRaw(false, true), options);
+        return jsonparse(messager, rs.toRaw(false, true), options);
       },
       pack: function _pack(value, options, buffer) {
         if (!value) {
