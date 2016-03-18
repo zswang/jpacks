@@ -67,6 +67,7 @@ module.exports = function(Schema) {
     });
     return new messager(result);
   }
+
   function bytesprase(value, options) {
     if (options.protobuf_bytesAsString) {
       return Schema.unpack(Schema.string(value.length), value, options);
@@ -271,15 +272,26 @@ module.exports = function(Schema) {
    '''</example>'''
    */
   function protobufCreator(prototext, messagepath, size) {
-    var builder;
-    if (/\s.*[{};]/.test(prototext)) {
-      builder = protobufjs.loadProto(prototext);
-    } else {
-      builder = protobufjs.loadProtoFile(prototext);
+    var messager;
+    /**
+     * 采用动态加载的策略
+     */
+    function initMessager() {
+      if (messager) {
+        return;
+      }
+      var builder;
+      if (/\s.*[{};]/.test(prototext)) {
+        builder = protobufjs.loadProto(prototext);
+      } else {
+        builder = protobufjs.loadProtoFile(prototext);
+      }
+      messager = builder.build(messagepath);
     }
-    var messager = builder.build(messagepath);
+
     return new Schema({
       unpack: function(buffer, options, offsets) {
+        initMessager();
         var bytes = Schema.unpack(Schema.bytes(size), buffer, options, offsets);
         var rs = messager.decode(bytes);
         var byteSize = rs.calculate();
@@ -289,6 +301,7 @@ module.exports = function(Schema) {
         return jsonparse(messager, rs.toRaw(false, true), options);
       },
       pack: function _pack(value, options, buffer) {
+        initMessager();
         if (!value) {
           return;
         }
