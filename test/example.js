@@ -366,6 +366,30 @@ describe("./src/schemas/link.js", function () {
 describe("./src/schemas/merge.js", function () {
   printValue = undefined;
   it("mergeCreator:base", function () {
+    var _ = jpacks;
+    _.def('structA', {
+      a: _.int8,
+      b: _.int8
+    });
+    _.def('structB', {
+      c: _.int8,
+      d: _.int8
+    });
+    var _schema = _.merge(
+      ['structA', 'structB']
+    );
+    print(_.stringify(_schema))
+    assert.equal(printValue, "object({a:'int8',b:'int8',c:'int8',d:'int8'})"); printValue = undefined;
+    var buffer = _.pack(_schema, {
+      a: 1,
+      b: 2,
+      c: 3,
+      d: 4
+    });
+    print(buffer.join(' '));
+    assert.equal(printValue, "1 2 3 4"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, "{\"a\":1,\"b\":2,\"c\":3,\"d\":4}"); printValue = undefined;
   });
 });
 describe("./src/schemas/number.js", function () {

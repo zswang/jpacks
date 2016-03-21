@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.6.15
+   * @version 0.6.16
    * @date 2016-03-21
    */
   function createSchema() {
@@ -1711,6 +1711,30 @@
    '''<example>'''
    * @example mergeCreator:base
     ```js
+    var _ = jpacks;
+    _.def('structA', {
+      a: _.int8,
+      b: _.int8
+    });
+    _.def('structB', {
+      c: _.int8,
+      d: _.int8
+    });
+    var _schema = _.merge(
+      ['structA', 'structB']
+    );
+    console.log(_.stringify(_schema))
+    // > object({a:'int8',b:'int8',c:'int8',d:'int8'})
+    var buffer = _.pack(_schema, {
+      a: 1,
+      b: 2,
+      c: 3,
+      d: 4
+    });
+    console.log(buffer.join(' '));
+    // > 1 2 3 4
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"a":1,"b":2,"c":3,"d":4}
     ```
    '''</example>'''
    */
