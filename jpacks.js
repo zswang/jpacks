@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.6.16
+   * @version 0.6.18
    * @date 2016-03-21
    */
   function createSchema() {
@@ -170,6 +170,11 @@
     buffer = arrayBufferFrom(buffer); // 确保是 ArrayBuffer 类型
     options = options || {};
     offsets = offsets || [0];
+    Object.keys(packSchema.defaultOptions || {}).forEach(function(key) {
+      if (typeof options[key] === 'undefined') {
+        options[key] = packSchema.defaultOptions[key];
+      }
+    });
     Object.keys(defaultOptions).forEach(function(key) {
       if (typeof options[key] === 'undefined') {
         options[key] = defaultOptions[key];
@@ -193,6 +198,11 @@
     var schema = Schema.from(packSchema);
     buffer = buffer || [];
     options = options || {};
+    Object.keys(packSchema.defaultOptions || {}).forEach(function(key) {
+      if (typeof options[key] === 'undefined') {
+        options[key] = packSchema.defaultOptions[key];
+      }
+    });
     Object.keys(defaultOptions).forEach(function(key) {
       if (typeof options[key] === 'undefined') {
         options[key] = defaultOptions[key];
@@ -360,7 +370,6 @@
     // > {"bytes":[18,35,52,69,86,103,120,137],"int8":18,"int16":8978,"int32":1161044754,"uint8":18,"uint16":8978,"uint32":1161044754,"float32":2882.19189453125,"float64":-4.843717058781651e-263,"shortint":18,"smallint":8978,"longint":1161044754,"byte":18,"word":8978,"longword":1161044754}
     ```
    '''</example>'''
-   * @example map is object
    */
   var bases = {
     int8: {
@@ -554,6 +563,23 @@
     // > 0 1 2 0
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [0,1,2,0]
+    ```
+   * @example arrayCreator():defaultOptions & littleEndian
+    ```js
+    var _ = jpacks;
+    var _schema = _.array('int16', 7);
+    _schema.defaultOptions = {
+      littleEndian: false
+    };
+    var buffer = _.pack(_schema, [1, 2, 3, 4, 5, 6, 7]);
+    console.log(buffer.join(' '));
+    // > 0 1 0 2 0 3 0 4 0 5 0 6 0 7
+    _schema.defaultOptions = {
+      littleEndian: true
+    };
+    var buffer = _.pack(_schema, [1, 2, 3, 4, 5, 6, 7]);
+    console.log(buffer.join(' '));
+    // > 1 0 2 0 3 0 4 0 5 0 6 0 7 0
     ```
    '''</example>'''
    */
@@ -1612,7 +1638,7 @@
   function mergeCreator(schemas) {
     var mergeScheam = {};
     schemas.forEach(function (item) {
-      var schema = Schema.from(item)
+      var schema = Schema.from(item);
       if (!schema) {
         return;
       }

@@ -43,7 +43,7 @@ module.exports = function (Schema) {
   function mergeCreator(schemas) {
     var mergeScheam = {};
     schemas.forEach(function (item) {
-      var schema = Schema.from(item)
+      var schema = Schema.from(item);
       if (!schema) {
         return;
       }

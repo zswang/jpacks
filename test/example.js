@@ -145,6 +145,22 @@ describe("./src/schemas/array.js", function () {
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, "[0,1,2,0]"); printValue = undefined;
   });
+  it("arrayCreator():defaultOptions & littleEndian", function () {
+    var _ = jpacks;
+    var _schema = _.array('int16', 7);
+    _schema.defaultOptions = {
+      littleEndian: false
+    };
+    var buffer = _.pack(_schema, [1, 2, 3, 4, 5, 6, 7]);
+    print(buffer.join(' '));
+    assert.equal(printValue, "0 1 0 2 0 3 0 4 0 5 0 6 0 7"); printValue = undefined;
+    _schema.defaultOptions = {
+      littleEndian: true
+    };
+    var buffer = _.pack(_schema, [1, 2, 3, 4, 5, 6, 7]);
+    print(buffer.join(' '));
+    assert.equal(printValue, "1 0 2 0 3 0 4 0 5 0 6 0 7 0"); printValue = undefined;
+  });
 });
 describe("./src/schemas/bytes.js", function () {
   printValue = undefined;
@@ -403,28 +419,6 @@ describe("./src/schemas/number.js", function () {
       _map[item] = item;
     });
     var _schema = _.union(_map, 8);
-    print(_.stringify(_schema));
-    assert.equal(printValue, "union({bytes:array('uint8',8),int8:'int8',int16:'int16',int32:'int32',uint8:'uint8',uint16:'uint16',uint32:'uint32',float32:'float32',float64:'float64',shortint:'shortint',smallint:'smallint',longint:'longint',byte:'byte',word:'word',longword:'longword'},8)"); printValue = undefined;
-    var buffer = _.pack(_schema, {
-      bytes: [0x12, 0x23, 0x34, 0x45, 0x56, 0x67, 0x78, 0x89]
-    });
-    print(buffer.join(' '));
-    assert.equal(printValue, "18 35 52 69 86 103 120 137"); printValue = undefined;
-    print(JSON.stringify(_.unpack(_schema, buffer)));
-    assert.equal(printValue, "{\"bytes\":[18,35,52,69,86,103,120,137],\"int8\":18,\"int16\":8978,\"int32\":1161044754,\"uint8\":18,\"uint16\":8978,\"uint32\":1161044754,\"float32\":2882.19189453125,\"float64\":-4.843717058781651e-263,\"shortint\":18,\"smallint\":8978,\"longint\":1161044754,\"byte\":18,\"word\":8978,\"longword\":1161044754}"); printValue = undefined;
-  });
-  it("set littleEndian as false", function () {
-    var _ = jpacks;
-    var _map = {
-      bytes: _.bytes(8)
-    };
-    'int8,int16,int32,uint8,uint16,uint32,float32,float64,shortint,smallint,longint,byte,word,longword'.split(/,/).forEach(function (item) {
-      _map[item] = item;
-    });
-    var _schema = _.union(_map, 8);
-    _schema.defaultOptions = {
-      littleEndian: false
-    };
     print(_.stringify(_schema));
     assert.equal(printValue, "union({bytes:array('uint8',8),int8:'int8',int16:'int16',int32:'int32',uint8:'uint8',uint16:'uint16',uint32:'uint32',float32:'float32',float64:'float64',shortint:'shortint',smallint:'smallint',longint:'longint',byte:'byte',word:'word',longword:'longword'},8)"); printValue = undefined;
     var buffer = _.pack(_schema, {
