@@ -5,7 +5,7 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.6.16
+   * @version 0.6.17
    * @date 2016-03-21
    */
   function createSchema() {
@@ -1612,7 +1612,7 @@
   function mergeCreator(schemas) {
     var mergeScheam = {};
     schemas.forEach(function (item) {
-      var schema = Schema.from(item)
+      var schema = Schema.from(item);
       if (!schema) {
         return;
       }

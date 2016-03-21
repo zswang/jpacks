@@ -1,7 +1,7 @@
 {
   "name": "jpacks",
   "description": "Binary data packing and unpacking.",
-  "version": "0.6.16",
+  "version": "0.6.17",
   "homepage": "https://github.com/zswang/jpacks",
   "authors": {
     "name": "zswang",
