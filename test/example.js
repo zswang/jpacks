@@ -283,6 +283,64 @@ describe("./src/schemas/enums.js", function () {
     assert.equal(printValue, "2"); printValue = undefined;
   });
 });
+describe("./src/schemas/exit.js", function () {
+  printValue = undefined;
+  it("exitCreator():base", function () {
+    var _ = jpacks;
+    var _schema = _.object({
+      a: _.int8,
+      b: _.int8,
+      c: _.exit(),
+      d: _.int8,
+      e: _.int8
+    });
+    print(_.stringify(_schema));
+    assert.equal(printValue, "object({a:'int8',b:'int8',c:exit(),d:'int8',e:'int8'})"); printValue = undefined;
+    var buffer = _.pack(_schema, {
+      a: 1,
+      b: 2,
+      c: 3,
+      d: 4,
+      e: 5
+    });
+    print(buffer.join(' '));
+    assert.equal(printValue, "1 2"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, "{\"a\":1,\"b\":2,\"c\":null,\"d\":null,\"e\":null}"); printValue = undefined;
+  });
+  it("exitCreator():depend", function () {
+    var _ = jpacks;
+    _.def('A', {
+      a: _.int8,
+      b: _.depend('a', function (a) {
+        return a === 1 ? _.int8 : _.exit();
+      }),
+      c: _.int8,
+    });
+    var _schema = _.object({
+      f1: 'A',
+      f2: 'A'
+    })
+    print(_.stringify(_schema));
+    assert.equal(printValue, "object({f1:'A',f2:'A'})"); printValue = undefined;
+    var buffer = _.pack(_schema, {
+      f1: {
+        a: 1,
+        b: 1,
+        c: 2
+      },
+      f2: {
+        a: 0,
+        b: 1,
+        c: 2
+      }
+    });
+    print(buffer.join(' '));
+    assert.equal(printValue, "1 1 2 0"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, "{\"f1\":{\"a\":1,\"b\":1,\"c\":2},\"f2\":{\"a\":0,\"b\":null,\"c\":null}}"); printValue = undefined;
+  });
+});
 describe("./src/schemas/link.js", function () {
   printValue = undefined;
   it("linkCreator():base", function () {
@@ -303,6 +361,11 @@ describe("./src/schemas/link.js", function () {
     assert.equal(printValue, "4 0 8 0 1 2 3 4 1 2 3 4 5 6 7 8"); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, "{\"size1\":4,\"size2\":8,\"data1\":[1,2,3,4],\"data2\":[1,2,3,4,5,6,7,8]}"); printValue = undefined;
+  });
+});
+describe("./src/schemas/merge.js", function () {
+  printValue = undefined;
+  it("mergeCreator:base", function () {
   });
 });
 describe("./src/schemas/number.js", function () {
@@ -356,6 +419,25 @@ describe("./src/schemas/object.js", function () {
     assert.equal(printValue, "6 122 115 119 97 110 103 186 7"); printValue = undefined;
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, "{\"name\":\"zswang\",\"year\":1978}"); printValue = undefined;
+  });
+  it("objectCreator:null", function () {
+    var _ = jpacks;
+    var _schema = _.object({
+      n1: null,
+      n2: null,
+      s1: _.int8
+    });
+    print(_.stringify(_schema));
+    assert.equal(printValue, "object({n1:null,n2:null,s1:'int8'})"); printValue = undefined;
+    var buffer = _.pack(_schema, {
+        n1: 1,
+        n2: 2,
+        s1: 1
+      });
+    print(buffer.join(' '));
+    assert.equal(printValue, "1"); printValue = undefined;
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, "{\"n1\":null,\"n2\":null,\"s1\":1}"); printValue = undefined;
   });
 });
 describe("./src/schemas/parse.js", function () {

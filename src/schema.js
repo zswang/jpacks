@@ -183,6 +183,9 @@ function createSchema() {
     /*<debug>
     console.log('unpack(packSchema: %j, buffer: %j)', packSchema, buffer);
     //</debug>*/
+    if (packSchema === null) {
+      return null;
+    }
     var schema = Schema.from(packSchema);
     /*<safe>*/
     if (!schema) {
@@ -214,6 +217,9 @@ function createSchema() {
     console.log('pack(schema: %j)', packSchema);
     //</debug>*/
 
+    if (packSchema === null) {
+      return null;
+    }
     var schema = Schema.from(packSchema);
     /*<safe>*/
     if (!schema) {

@@ -1,4 +1,4 @@
-module.exports = function (Schema) {
+module.exports = function(Schema) {
   /*<define>*/
   /**
    * 定义一个对象结构
@@ -40,6 +40,28 @@ module.exports = function (Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > {"name":"zswang","year":1978}
     ```
+   * @example objectCreator:null
+    ```js
+    var _ = jpacks;
+    var _schema = _.object({
+      n1: null,
+      n2: null,
+      s1: _.int8
+    });
+    console.log(_.stringify(_schema));
+    // > object({n1:null,n2:null,s1:'int8'})
+
+    var buffer = _.pack(_schema, {
+        n1: 1,
+        n2: 2,
+        s1: 1
+      });
+    console.log(buffer.join(' '));
+    // > 1
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"n1":null,"n2":null,"s1":1}
+    ```
    '''</example>'''
    */
   function objectCreator(objectSchema) {
@@ -61,9 +83,13 @@ module.exports = function (Schema) {
           offsets: new objectSchema.constructor(),
           schema: objectSchema
         };
-        keys.forEach(function (key) {
-          options.$scope.offsets[key] = offsets[0];
-          result[key] = Schema.unpack(objectSchema[key], buffer, options, offsets);
+        keys.forEach(function(key) {
+          if (options.$scope.exit) {
+            result[key] = null;
+          } else {
+            options.$scope.offsets[key] = offsets[0];
+            result[key] = Schema.unpack(objectSchema[key], buffer, options, offsets);
+          }
         });
         options.$scope = $scope;
         return result;
@@ -75,9 +101,13 @@ module.exports = function (Schema) {
           offsets: new objectSchema.constructor(),
           schema: objectSchema
         };
-        keys.forEach(function (key) {
+        keys.every(function(key) {
+          if (options.$scope.exit) {
+            return false;
+          }
           options.$scope.offsets[key] = buffer.length;
           Schema.pack(objectSchema[key], value[key], options, buffer);
+          return true;
         });
         options.$scope = $scope;
       },
@@ -85,7 +115,7 @@ module.exports = function (Schema) {
       namespace: 'object'
     });
   }
-  var object = Schema.together(objectCreator, function (fn, args) {
+  var object = Schema.together(objectCreator, function(fn, args) {
     fn.namespace = 'object';
     fn.args = args;
   });

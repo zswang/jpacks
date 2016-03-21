@@ -49,10 +49,12 @@
     require('./schemas/cstring')(Schema);
 
     require('./schemas/depend')(Schema);
+    require('./schemas/exit')(Schema);
     require('./schemas/parse')(Schema);
 
     require('./schemas/virtual')(Schema);
     require('./schemas/link')(Schema);
+    require('./schemas/merge')(Schema);
     /*</jdists>*/
 
     return Schema;

@@ -5,8 +5,8 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.6.11
-   * @date 2016-03-18
+   * @version 0.6.15
+   * @date 2016-03-21
    */
   function createSchema() {
   /**
@@ -181,6 +181,9 @@
     /*<debug>
     console.log('unpack(packSchema: %j, buffer: %j)', packSchema, buffer);
     //</debug>*/
+    if (packSchema === null) {
+      return null;
+    }
     var schema = Schema.from(packSchema);
     /*<safe>*/
     if (!schema) {
@@ -210,6 +213,9 @@
     /*<debug>
     console.log('pack(schema: %j)', packSchema);
     //</debug>*/
+    if (packSchema === null) {
+      return null;
+    }
     var schema = Schema.from(packSchema);
     /*<safe>*/
     if (!schema) {
@@ -760,6 +766,26 @@
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > {"name":"zswang","year":1978}
     ```
+   * @example objectCreator:null
+    ```js
+    var _ = jpacks;
+    var _schema = _.object({
+      n1: null,
+      n2: null,
+      s1: _.int8
+    });
+    console.log(_.stringify(_schema));
+    // > object({n1:null,n2:null,s1:'int8'})
+    var buffer = _.pack(_schema, {
+        n1: 1,
+        n2: 2,
+        s1: 1
+      });
+    console.log(buffer.join(' '));
+    // > 1
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"n1":null,"n2":null,"s1":1}
+    ```
    '''</example>'''
    */
   function objectCreator(objectSchema) {
@@ -781,9 +807,13 @@
           offsets: new objectSchema.constructor(),
           schema: objectSchema
         };
-        keys.forEach(function (key) {
-          options.$scope.offsets[key] = offsets[0];
-          result[key] = Schema.unpack(objectSchema[key], buffer, options, offsets);
+        keys.forEach(function(key) {
+          if (options.$scope.exit) {
+            result[key] = null;
+          } else {
+            options.$scope.offsets[key] = offsets[0];
+            result[key] = Schema.unpack(objectSchema[key], buffer, options, offsets);
+          }
         });
         options.$scope = $scope;
         return result;
@@ -795,9 +825,13 @@
           offsets: new objectSchema.constructor(),
           schema: objectSchema
         };
-        keys.forEach(function (key) {
+        keys.every(function(key) {
+          if (options.$scope.exit) {
+            return false;
+          }
           options.$scope.offsets[key] = buffer.length;
           Schema.pack(objectSchema[key], value[key], options, buffer);
+          return true;
         });
         options.$scope = $scope;
       },
@@ -805,7 +839,7 @@
       namespace: 'object'
     });
   }
-  var object = Schema.together(objectCreator, function (fn, args) {
+  var object = Schema.together(objectCreator, function(fn, args) {
     fn.namespace = 'object';
     fn.args = args;
   });
@@ -1345,6 +1379,97 @@
   }
   Schema.register('dependArray', dependArray);
   /**
+   * 退出对象类型的处理过程
+   *
+   '''<example>'''
+   * @example exitCreator():base
+    ```js
+    var _ = jpacks;
+    var _schema = _.object({
+      a: _.int8,
+      b: _.int8,
+      c: _.exit(),
+      d: _.int8,
+      e: _.int8
+    });
+    console.log(_.stringify(_schema));
+    // > object({a:'int8',b:'int8',c:exit(),d:'int8',e:'int8'})
+    var buffer = _.pack(_schema, {
+      a: 1,
+      b: 2,
+      c: 3,
+      d: 4,
+      e: 5
+    });
+    console.log(buffer.join(' '));
+    // > 1 2
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"a":1,"b":2,"c":null,"d":null,"e":null}
+    ```
+   * @example exitCreator():depend
+    ```js
+    var _ = jpacks;
+    _.def('A', {
+      a: _.int8,
+      b: _.depend('a', function (a) {
+        return a === 1 ? _.int8 : _.exit();
+      }),
+      c: _.int8,
+    });
+    var _schema = _.object({
+      f1: 'A',
+      f2: 'A'
+    })
+    console.log(_.stringify(_schema));
+    // > object({f1:'A',f2:'A'})
+    var buffer = _.pack(_schema, {
+      f1: {
+        a: 1,
+        b: 1,
+        c: 2
+      },
+      f2: {
+        a: 0,
+        b: 1,
+        c: 2
+      }
+    });
+    console.log(buffer.join(' '));
+    // > 1 1 2 0
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"f1":{"a":1,"b":1,"c":2},"f2":{"a":0,"b":null,"c":null}}
+    ```
+   '''</example>'''
+   */
+  function exitCreator() {
+    return new Schema({
+      unpack: function _unpack(buffer, options, offsets) {
+        /*<safe>*/
+        if (!options.$scope) {
+          throw new Error('Unpack must running in object.');
+        }
+        /*</safe>*/
+        options.$scope.exit = true;
+        return null;
+      },
+      pack: function _pack(value, options, buffer) {
+        /*<safe>*/
+        if (!options.$scope) {
+          throw new Error('Unpack must running in object.');
+        }
+        /*</safe>*/
+        options.$scope.exit = true;
+      },
+      namespace: 'exit',
+      args: arguments
+    });
+  }
+  var exit = Schema.together(exitCreator, function (fn, args) {
+    fn.namespace = 'exit';
+    fn.args = args;
+  });
+  Schema.register('exit', exit);
+  /**
    * 构建解析类型，针对大小会改变的数据
    *
    * @param {Function} encode 编码器
@@ -1578,6 +1703,36 @@
     return link(field, Schema.array(itemSchema));
   }
   Schema.register('linkArray', linkArray);
+  /**
+   * 定义一个合并结构
+   *
+   * @param {Array of (Scheam|string)} schema 数据结构
+   * @return {Schema} 返回构建的数据结构
+   '''<example>'''
+   * @example mergeCreator:base
+    ```js
+    ```
+   '''</example>'''
+   */
+  function mergeCreator(schemas) {
+    var mergeScheam = {};
+    schemas.forEach(function (item) {
+      var schema = Schema.from(item)
+      if (!schema) {
+        return;
+      }
+      var obj = schema.args[0];
+      Object.keys(obj).forEach(function (key) {
+        mergeScheam[key] = obj[key];
+      });
+    });
+    return Schema.object(mergeScheam);
+  }
+  var merge = Schema.together(mergeCreator, function (fn, args) {
+    fn.namespace = 'merge';
+    fn.args = args;
+  });
+  Schema.register('merge', merge);
     return Schema;
   }
   var root = create();
