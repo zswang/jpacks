@@ -126,6 +126,24 @@ module.exports = function(Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > [0,1,2,0]
     ```
+   * @example arrayCreator():defaultOptions & littleEndian
+    ```js
+    var _ = jpacks;
+    var _schema = _.array('int16', 7);
+    _schema.defaultOptions = {
+      littleEndian: false
+    };
+    var buffer = _.pack(_schema, [1, 2, 3, 4, 5, 6, 7]);
+    console.log(buffer.join(' '));
+    // > 0 1 0 2 0 3 0 4 0 5 0 6 0 7
+
+    _schema.defaultOptions = {
+      littleEndian: true
+    };
+    var buffer = _.pack(_schema, [1, 2, 3, 4, 5, 6, 7]);
+    console.log(buffer.join(' '));
+    // > 1 0 2 0 3 0 4 0 5 0 6 0 7 0
+    ```
    '''</example>'''
    */
   function arrayCreator(item, count) {

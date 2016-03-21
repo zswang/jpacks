@@ -33,7 +33,6 @@ module.exports = function defineNumber(Schema) {
     // > {"bytes":[18,35,52,69,86,103,120,137],"int8":18,"int16":8978,"int32":1161044754,"uint8":18,"uint16":8978,"uint32":1161044754,"float32":2882.19189453125,"float64":-4.843717058781651e-263,"shortint":18,"smallint":8978,"longint":1161044754,"byte":18,"word":8978,"longword":1161044754}
     ```
    '''</example>'''
-   * @example map is object
    */
   var bases = {
     int8: {

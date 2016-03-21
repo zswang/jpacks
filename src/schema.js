@@ -195,6 +195,11 @@ function createSchema() {
     buffer = arrayBufferFrom(buffer); // 确保是 ArrayBuffer 类型
     options = options || {};
     offsets = offsets || [0];
+    Object.keys(packSchema.defaultOptions || {}).forEach(function(key) {
+      if (typeof options[key] === 'undefined') {
+        options[key] = packSchema.defaultOptions[key];
+      }
+    });
     Object.keys(defaultOptions).forEach(function(key) {
       if (typeof options[key] === 'undefined') {
         options[key] = defaultOptions[key];
@@ -230,6 +235,11 @@ function createSchema() {
     buffer = buffer || [];
 
     options = options || {};
+    Object.keys(packSchema.defaultOptions || {}).forEach(function(key) {
+      if (typeof options[key] === 'undefined') {
+        options[key] = packSchema.defaultOptions[key];
+      }
+    });
     Object.keys(defaultOptions).forEach(function(key) {
       if (typeof options[key] === 'undefined') {
         options[key] = defaultOptions[key];
