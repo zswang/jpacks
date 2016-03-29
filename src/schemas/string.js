@@ -24,10 +24,13 @@ module.exports = function (Schema) {
     // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
    '''<example>'''
    */
-  function stringBytes(value, options) {
+ function stringBytes(value, options) {
     if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
       return new Buffer(value, options.encoding);
     } else {
+      if (typeof TextEncoder === 'function') {
+         return Array.from(new TextEncoder(options.encoding).encode(value));
+      }
       return encodeUTF8(value).split('').map(function (item) {
         return item.charCodeAt();
       });
@@ -75,6 +78,9 @@ module.exports = function (Schema) {
         var stringBuffer = Schema.unpack(schema, buffer, options, offsets);
         if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
           return new Buffer(stringBuffer).toString(options.encoding);
+        }
+        if (typeof TextDecoder === 'function') {
+           return new TextDecoder(options.encoding).decode(stringBuffer);
         }
         return decodeUTF8(String.fromCharCode.apply(String, stringBuffer));
       },

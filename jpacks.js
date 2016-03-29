@@ -5,8 +5,8 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.6.18
-   * @date 2016-03-21
+   * @version 0.6.19
+   * @date 2016-03-29
    */
   function createSchema() {
   /**
@@ -1061,10 +1061,13 @@
     // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
    '''<example>'''
    */
-  function stringBytes(value, options) {
+ function stringBytes(value, options) {
     if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
       return new Buffer(value, options.encoding);
     } else {
+      if (typeof TextEncoder === 'function') {
+         return Array.from(new TextEncoder(options.encoding).encode(value));
+      }
       return encodeUTF8(value).split('').map(function (item) {
         return item.charCodeAt();
       });
@@ -1107,6 +1110,9 @@
         var stringBuffer = Schema.unpack(schema, buffer, options, offsets);
         if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
           return new Buffer(stringBuffer).toString(options.encoding);
+        }
+        if (typeof TextDecoder === 'function') {
+           return new TextDecoder(options.encoding).decode(stringBuffer);
         }
         return decodeUTF8(String.fromCharCode.apply(String, stringBuffer));
       },
