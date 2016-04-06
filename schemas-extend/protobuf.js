@@ -53,6 +53,10 @@ module.exports = function(Schema) {
         return;
       }
 
+      if (!value && /int64/.test(type.type.name)) { // 空值优化
+        value = 0;
+      }
+
       if (type.type.name === 'bytes') {
         result[key] = bytesify(value, options);
         return;
@@ -268,6 +272,18 @@ module.exports = function(Schema) {
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > {"items":[[1,2,3,4],[5,6,7,8],[49,50,51,52,53,54,55,56]]}
+    ```
+   * @example protobufCreator():int64 from empty string
+    ```js
+    var _ = jpacks;
+    var _schema = _.protobuf('package Long; message Value { optional uint64 value = 1; }', 'Long.Value', null);
+
+    var buffer = _.pack(_schema, {
+      value: ''
+    });
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > {"value":"0"}
     ```
    '''</example>'''
    */

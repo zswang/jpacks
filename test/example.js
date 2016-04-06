@@ -757,6 +757,15 @@ describe("./schemas-extend/protobuf.js", function () {
     print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(printValue, "{\"items\":[[1,2,3,4],[5,6,7,8],[49,50,51,52,53,54,55,56]]}"); printValue = undefined;
   });
+  it("protobufCreator():int64 from empty string", function () {
+    var _ = jpacks;
+    var _schema = _.protobuf('package Long; message Value { optional uint64 value = 1; }', 'Long.Value', null);
+    var buffer = _.pack(_schema, {
+      value: ''
+    });
+    print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(printValue, "{\"value\":\"0\"}"); printValue = undefined;
+  });
 });
 describe("./schemas-extend/zlib.js", function () {
   printValue = undefined;
