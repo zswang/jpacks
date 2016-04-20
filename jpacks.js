@@ -5,8 +5,8 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.6.20
-   * @date 2016-04-06
+   * @version 0.6.23
+   * @date 2016-04-20
    */
   function createSchema() {
   /**
@@ -141,12 +141,15 @@
   /**
    * 确保是 ArrayBuffer 类型
    *
-   * @param {Array|Buffer} 数组和缓冲区
+   * @param {Array|Buffer|string} 数组和缓冲区
    * @return {ArrayBuffer} 返回转换后的 ArrayBuffer
    */
   function arrayBufferFrom(buffer) {
     if (buffer instanceof ArrayBuffer) {
       return buffer;
+    }
+    if (typeof buffer === 'string' && Schema.stringBytes) {
+      buffer = Schema.stringBytes(buffer);
     }
     var ab = new ArrayBuffer(buffer.length);
     var arr = new Uint8Array(ab, 0, buffer.length);
@@ -161,18 +164,53 @@
    * @param {ArrayBuffer|Buffer} buffer 缓冲区
    * @param {Array=} offsets 读取偏移，会被改写
    * @return {Number|Object} 返回解包的值
-   */
+   '''<example>'''
+   * @example together():base
+    ```js
+    var _ = jpacks;
+    function f(a, b, c) {
+      console.log(JSON.stringify([a, b, c]));
+    }
+    var t = _.together(f);
+    t(1)()(2, 3);
+    // > [1,2,3]
+    t(4)(5)()(6);
+    // > [4,5,6]
+    t(7, 8, 9);
+    // > [7,8,9]
+    t('a', 'b')('c');
+    // > ["a","b","c"]
+    t()('x')()()('y')()()('z');
+    // > ["x","y","z"]
+    ```
+   * @example together():hook
+    ```js
+    var _ = jpacks;
+    function f(a, b, c) {}
+    var t = _.together(f, function(t, args) {
+      t.schema = 'f(' + args + ')';
+    });
+    console.log(t(1)(2).schema);
+    // > f(1,2)
+    function go() {
+      console.log(1);
+    }
+    var g = _.together(go);
+    g();
+    // > 1
+    ```
+   '''</example>'''
+    */
   function unpack(packSchema, buffer, options, offsets) {
     if (packSchema === null) {
       return null;
     }
     var schema = Schema.from(packSchema);
-    buffer = arrayBufferFrom(buffer); // 确保是 ArrayBuffer 类型
     options = options || {};
     offsets = offsets || [0];
-    Object.keys(packSchema.defaultOptions || {}).forEach(function(key) {
+    Object.keys(schema.defaultOptions || {}).forEach(function(key) {
       if (typeof options[key] === 'undefined') {
-        options[key] = packSchema.defaultOptions[key];
+        options[key] = schema.defaultOptions[key];
       }
     });
     Object.keys(defaultOptions).forEach(function(key) {
@@ -180,7 +218,7 @@
         options[key] = defaultOptions[key];
       }
     });
-    return schema.unpack(buffer, options, offsets); // 解码
+    return schema.unpack(arrayBufferFrom(buffer), options, offsets); // 解码
   }
   Schema.unpack = unpack;
   /**
@@ -198,9 +236,9 @@
     var schema = Schema.from(packSchema);
     buffer = buffer || [];
     options = options || {};
-    Object.keys(packSchema.defaultOptions || {}).forEach(function(key) {
+    Object.keys(schema.defaultOptions || {}).forEach(function(key) {
       if (typeof options[key] === 'undefined') {
-        options[key] = packSchema.defaultOptions[key];
+        options[key] = schema.defaultOptions[key];
       }
     });
     Object.keys(defaultOptions).forEach(function(key) {

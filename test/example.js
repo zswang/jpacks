@@ -51,6 +51,38 @@ describe("./src/schema.js", function () {
     g();
     assert.equal(printValue, "1"); printValue = undefined;
   });
+  it("together():base", function () {
+    var _ = jpacks;
+    function f(a, b, c) {
+      print(JSON.stringify([a, b, c]));
+    }
+    var t = _.together(f);
+    t(1)()(2, 3);
+    assert.equal(printValue, "[1,2,3]"); printValue = undefined;
+    t(4)(5)()(6);
+    assert.equal(printValue, "[4,5,6]"); printValue = undefined;
+    t(7, 8, 9);
+    assert.equal(printValue, "[7,8,9]"); printValue = undefined;
+    t('a', 'b')('c');
+    assert.equal(printValue, "[\"a\",\"b\",\"c\"]"); printValue = undefined;
+    t()('x')()()('y')()()('z');
+    assert.equal(printValue, "[\"x\",\"y\",\"z\"]"); printValue = undefined;
+  });
+  it("together():hook", function () {
+    var _ = jpacks;
+    function f(a, b, c) {}
+    var t = _.together(f, function(t, args) {
+      t.schema = 'f(' + args + ')';
+    });
+    print(t(1)(2).schema);
+    assert.equal(printValue, "f(1,2)"); printValue = undefined;
+    function go() {
+      print(1);
+    }
+    var g = _.together(go);
+    g();
+    assert.equal(printValue, "1"); printValue = undefined;
+  });
 });
 describe("./src/schemas/array.js", function () {
   printValue = undefined;
@@ -759,12 +791,14 @@ describe("./schemas-extend/protobuf.js", function () {
   });
   it("protobufCreator():int64 from empty string", function () {
     var _ = jpacks;
-    var _schema = _.protobuf('package Long; message Value { optional uint64 value = 1; }', 'Long.Value', null);
+    var _schema = _.protobuf('package Long; message Value { optional int64 int64_value = 1; optional int32 int32_value = 2; optional float float_value = 3; }', 'Long.Value', null);
     var buffer = _.pack(_schema, {
-      value: ''
+      int64_value: '',
+      int32_value: '',
+      float_value: ''
     });
     print(JSON.stringify(_.unpack(_schema, buffer)));
-    assert.equal(printValue, "{\"value\":\"0\"}"); printValue = undefined;
+    assert.equal(printValue, "{\"int64_value\":\"0\",\"int32_value\":0,\"float_value\":0}"); printValue = undefined;
   });
 });
 describe("./schemas-extend/zlib.js", function () {

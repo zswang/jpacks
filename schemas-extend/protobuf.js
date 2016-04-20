@@ -53,7 +53,7 @@ module.exports = function(Schema) {
         return;
       }
 
-      if (!value && /int64/.test(type.type.name)) { // 空值优化
+      if (!value && /int|float/.test(type.type.name)) { // 空值优化
         value = 0;
       }
 
@@ -276,14 +276,16 @@ module.exports = function(Schema) {
    * @example protobufCreator():int64 from empty string
     ```js
     var _ = jpacks;
-    var _schema = _.protobuf('package Long; message Value { optional uint64 value = 1; }', 'Long.Value', null);
+    var _schema = _.protobuf('package Long; message Value { optional int64 int64_value = 1; optional int32 int32_value = 2; optional float float_value = 3; }', 'Long.Value', null);
 
     var buffer = _.pack(_schema, {
-      value: ''
+      int64_value: '',
+      int32_value: '',
+      float_value: ''
     });
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
-    // > {"value":"0"}
+    // > {"int64_value":"0","int32_value":0,"float_value":0}
     ```
    '''</example>'''
    */
