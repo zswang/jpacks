@@ -25,8 +25,9 @@ module.exports = function (Schema) {
    '''<example>'''
    */
  function stringBytes(value, options) {
+    options = options || {};
     if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
-      return new Buffer(value, options.encoding);
+      return new Buffer(value, options.encoding || 'binary');
     } else {
       if (typeof TextEncoder === 'function') {
          return Array.from(new TextEncoder(options.encoding).encode(value));

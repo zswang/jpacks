@@ -19,6 +19,12 @@ describe("./src/jpacks.js", function () {
 });
 describe("./src/schema.js", function () {
   printValue = undefined;
+  it("arrayBufferFrom():string", function () {
+    var _ = jpacks;
+    var ab = _.arrayBufferFrom('abc');
+    print(new Buffer(new Uint8Array(ab)).toString('hex'));
+    assert.equal(printValue, "616263"); printValue = undefined;
+  });
   it("together():base", function () {
     var _ = jpacks;
     function f(a, b, c) {

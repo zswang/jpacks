@@ -62,7 +62,7 @@
   var root = create();
   root.create = create;
   var exports = root;
-
+  /* istanbul ignore next */
   if (typeof define === 'function') {
     if (define.amd || define.cmd) {
       define(function () {

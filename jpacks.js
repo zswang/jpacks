@@ -5,8 +5,8 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.6.23
-   * @date 2016-04-20
+   * @version 0.7.2
+   * @date 2016-08-02
    */
   function createSchema() {
   /**
@@ -143,13 +143,22 @@
    *
    * @param {Array|Buffer|string} 数组和缓冲区
    * @return {ArrayBuffer} 返回转换后的 ArrayBuffer
+   '''<example>'''
+   * @example arrayBufferFrom():string
+    ```js
+    var _ = jpacks;
+    var ab = _.arrayBufferFrom('abc');
+    console.log(new Buffer(new Uint8Array(ab)).toString('hex'));
+    // > 616263
+    ```
+   '''</example>'''
    */
-  function arrayBufferFrom(buffer) {
+  function arrayBufferFrom(buffer, options) {
     if (buffer instanceof ArrayBuffer) {
       return buffer;
     }
     if (typeof buffer === 'string' && Schema.stringBytes) {
-      buffer = Schema.stringBytes(buffer);
+      buffer = Schema.stringBytes(buffer, options);
     }
     var ab = new ArrayBuffer(buffer.length);
     var arr = new Uint8Array(ab, 0, buffer.length);
@@ -218,7 +227,7 @@
         options[key] = defaultOptions[key];
       }
     });
-    return schema.unpack(arrayBufferFrom(buffer), options, offsets); // 解码
+    return schema.unpack(arrayBufferFrom(buffer, options), options, offsets); // 解码
   }
   Schema.unpack = unpack;
   /**
@@ -1100,8 +1109,9 @@
    '''<example>'''
    */
  function stringBytes(value, options) {
+    options = options || {};
     if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
-      return new Buffer(value, options.encoding);
+      return new Buffer(value, options.encoding || 'binary');
     } else {
       if (typeof TextEncoder === 'function') {
          return Array.from(new TextEncoder(options.encoding).encode(value));
@@ -1703,6 +1713,7 @@
   var root = create();
   root.create = create;
   var exports = root;
+  /* istanbul ignore next */
   if (typeof define === 'function') {
     if (define.amd || define.cmd) {
       define(function () {

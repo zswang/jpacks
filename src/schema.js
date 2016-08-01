@@ -159,13 +159,22 @@ function createSchema() {
    *
    * @param {Array|Buffer|string} 数组和缓冲区
    * @return {ArrayBuffer} 返回转换后的 ArrayBuffer
+   '''<example>'''
+   * @example arrayBufferFrom():string
+    ```js
+    var _ = jpacks;
+    var ab = _.arrayBufferFrom('abc');
+    console.log(new Buffer(new Uint8Array(ab)).toString('hex'));
+    // > 616263
+    ```
+   '''</example>'''
    */
-  function arrayBufferFrom(buffer) {
+  function arrayBufferFrom(buffer, options) {
     if (buffer instanceof ArrayBuffer) {
       return buffer;
     }
     if (typeof buffer === 'string' && Schema.stringBytes) {
-      buffer = Schema.stringBytes(buffer);
+      buffer = Schema.stringBytes(buffer, options);
     }
     var ab = new ArrayBuffer(buffer.length);
     var arr = new Uint8Array(ab, 0, buffer.length);
@@ -251,7 +260,7 @@ function createSchema() {
         options[key] = defaultOptions[key];
       }
     });
-    return schema.unpack(arrayBufferFrom(buffer), options, offsets); // 解码
+    return schema.unpack(arrayBufferFrom(buffer, options), options, offsets); // 解码
   }
   Schema.unpack = unpack;
 
