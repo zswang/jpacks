@@ -22,12 +22,12 @@ module.exports = function (Schema) {
 
     console.log(buffer.join(' '));
     // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
-   '''<example>'''
+   '''</example>'''
    */
  function stringBytes(value, options) {
     options = options || {};
     if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
-      return new Buffer(value, options.encoding || 'binary');
+      return new Buffer(value, options.encoding || 'utf8');
     } else {
       if (typeof TextEncoder === 'function') {
          return Array.from(new TextEncoder(options.encoding).encode(value));
@@ -69,7 +69,7 @@ module.exports = function (Schema) {
     // > 20 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
     console.log(_.unpack(_schema, buffer));
     // > 你好世界！Hello
-   '''<example>'''
+   '''</example>'''
    */
   function stringCreator(size) {
     // console.log('stringCreator', Schema.stringify(size));
@@ -108,7 +108,7 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = _.shortString;
     console.log(_.stringify(_schema));
-    // > string(uint8)
+    // > string('uint8')
 
     var buffer = _.pack(_schema, 'shortString');
     console.log(buffer.join(' '));
@@ -130,11 +130,11 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = _.smallString;
     console.log(_.stringify(_schema));
-    // > string(uint16)
+    // > string('uint16')
 
     var buffer = _.pack(_schema, 'smallString');
     console.log(buffer.join(' '));
-    // > 0 11 115 109 97 108 108 83 116 114 105 110 103
+    // > 11 0 115 109 97 108 108 83 116 114 105 110 103
 
     console.log(_.unpack(_schema, buffer));
     // > smallString
@@ -152,11 +152,11 @@ module.exports = function (Schema) {
     var _ = jpacks;
     var _schema = _.longString;
     console.log(_.stringify(_schema));
-    // > string(uint32)
+    // > string('uint32')
 
     var buffer = _.pack(_schema, 'longString');
     console.log(buffer.join(' '));
-    // > 0 0 0 10 108 111 110 103 83 116 114 105 110 103
+    // > 10 0 0 0 108 111 110 103 83 116 114 105 110 103
     console.log(_.unpack(_schema, buffer));
     // > longString
     ```

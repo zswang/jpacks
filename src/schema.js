@@ -167,6 +167,13 @@ function createSchema() {
     console.log(new Buffer(new Uint8Array(ab)).toString('hex'));
     // > 616263
     ```
+   * @example arrayBufferFrom():string Unicode
+    ```js
+    var _ = jpacks;
+    var ab = _.arrayBufferFrom('汉字');
+    console.log(new Buffer(new Uint8Array(ab)).toString('hex'));
+    // > e6b189e5ad97
+    ```
    '''</example>'''
    */
   function arrayBufferFrom(buffer, options) {

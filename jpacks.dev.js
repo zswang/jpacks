@@ -5,8 +5,8 @@
    * Binary data packing and unpacking.
    * @author
    *   zswang (http://weibo.com/zswang)
-   * @version 0.7.2
-   * @date 2016-08-01
+   * @version 0.8.1
+   * @date 2016-08-27
    */
   function createSchema() {
   /**
@@ -165,6 +165,13 @@
     var ab = _.arrayBufferFrom('abc');
     console.log(new Buffer(new Uint8Array(ab)).toString('hex'));
     // > 616263
+    ```
+   * @example arrayBufferFrom():string Unicode
+    ```js
+    var _ = jpacks;
+    var ab = _.arrayBufferFrom('汉字');
+    console.log(new Buffer(new Uint8Array(ab)).toString('hex'));
+    // > e6b189e5ad97
     ```
    '''</example>'''
    */
@@ -1169,12 +1176,12 @@
     var buffer = _.pack(_.bytes(20), _.stringBytes('你好世界！Hello'));
     console.log(buffer.join(' '));
     // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
-   '''<example>'''
+   '''</example>'''
    */
  function stringBytes(value, options) {
     options = options || {};
     if (!options.browser && typeof Buffer !== 'undefined') { // NodeJS
-      return new Buffer(value, options.encoding || 'binary');
+      return new Buffer(value, options.encoding || 'utf8');
     } else {
       if (typeof TextEncoder === 'function') {
          return Array.from(new TextEncoder(options.encoding).encode(value));
@@ -1211,7 +1218,7 @@
     // > 20 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
     console.log(_.unpack(_schema, buffer));
     // > 你好世界！Hello
-   '''<example>'''
+   '''</example>'''
    */
   function stringCreator(size) {
     // console.log('stringCreator', Schema.stringify(size));
@@ -1249,7 +1256,7 @@
     var _ = jpacks;
     var _schema = _.shortString;
     console.log(_.stringify(_schema));
-    // > string(uint8)
+    // > string('uint8')
     var buffer = _.pack(_schema, 'shortString');
     console.log(buffer.join(' '));
     // > 11 115 104 111 114 116 83 116 114 105 110 103
@@ -1269,10 +1276,10 @@
     var _ = jpacks;
     var _schema = _.smallString;
     console.log(_.stringify(_schema));
-    // > string(uint16)
+    // > string('uint16')
     var buffer = _.pack(_schema, 'smallString');
     console.log(buffer.join(' '));
-    // > 0 11 115 109 97 108 108 83 116 114 105 110 103
+    // > 11 0 115 109 97 108 108 83 116 114 105 110 103
     console.log(_.unpack(_schema, buffer));
     // > smallString
     ```
@@ -1289,10 +1296,10 @@
     var _ = jpacks;
     var _schema = _.longString;
     console.log(_.stringify(_schema));
-    // > string(uint32)
+    // > string('uint32')
     var buffer = _.pack(_schema, 'longString');
     console.log(buffer.join(' '));
-    // > 0 0 0 10 108 111 110 103 83 116 114 105 110 103
+    // > 10 0 0 0 108 111 110 103 83 116 114 105 110 103
     console.log(_.unpack(_schema, buffer));
     // > longString
     ```
