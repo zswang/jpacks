@@ -271,6 +271,20 @@ describe("schemas-extend/protobuf.js", function () {
     assert.equal(examplejs_printLines.join("\n"), "{\"int64_value\":\"0\",\"int32_value\":0,\"float_value\":0}"); examplejs_printLines = [];
   });
           
+  it("protobufCreator():repeated & not array", function () {
+    examplejs_printLines = [];
+
+    (function() {
+    var _ = jpacks;
+    var _schema = _.protobuf('package MyPackage; message MyMessage { repeated int32 arr = 1; }', 'MyPackage.MyMessage', null);
+
+    var buffer = _.pack(_schema, {
+      arr: 1
+    });
+    // * throw
+    }).should.throw();
+  });
+          
 });
          
 

@@ -38,6 +38,9 @@ module.exports = function(Schema) {
       if (type.repeated) { // 数组类型
         var items = [];
         value = value || [];
+        if (!(value instanceof Array)) {
+          throw 'Field "' + key + '" not array.';
+        }
         for (var i = 0; i < value.length; i++) {
           if (!type.resolvedType) {
             if (type.type.name === 'bytes') {
@@ -286,6 +289,16 @@ module.exports = function(Schema) {
 
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > {"int64_value":"0","int32_value":0,"float_value":0}
+    ```
+   * @example protobufCreator():repeated & not array
+    ```js
+    var _ = jpacks;
+    var _schema = _.protobuf('package MyPackage; message MyMessage { repeated int32 arr = 1; }', 'MyPackage.MyMessage', null);
+
+    var buffer = _.pack(_schema, {
+      arr: 1
+    });
+    // * throw
     ```
    '''</example>'''
    */
