@@ -63,16 +63,31 @@ module.exports = function(Schema) {
     console.log(JSON.stringify(_.unpack(_schema, buffer)));
     // > "-2"
     ```
+   * @example sleb128():array
+    ```js
+    var _ = jpacks;
+    var _schema = _.array(_.uleb128, null);
+
+    console.log(_.stringify(_schema))
+    // > array('uleb128',null)
+
+    var buffer = _.pack(_schema, ['1', '2', '3', '4', '1609531171697315243', '9008000000011122', 0, 0]);
+
+    console.log(buffer.join(' '));
+    // > 1 2 3 4 171 155 191 255 170 130 141 171 22 242 214 140 129 167 151 128 16 0 0
+
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > ["1","2","3","4","1609531171697315243","9008000000011122","0","0"]
+    ```
    '''</example>'''
    */
   function leb128Creator(unsigned) {
     var processor = unsigned ? leb128.unsigned : leb128.signed;
     return new Schema({
       unpack: function(buffer, options, offsets) {
-        var stream = new Stream(new Buffer(buffer));
-        stream._bytesRead = offsets[0]
+        var stream = new Stream(new Buffer(buffer).slice(offsets[0]));
         var result = processor.read(stream);
-        offsets[0] = stream._bytesRead;
+        offsets[0] += stream._bytesRead;
         return result;
       },
       pack: function _pack(value, options, buffer) {

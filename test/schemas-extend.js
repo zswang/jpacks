@@ -178,6 +178,23 @@ describe("schemas-extend/leb128.js", function () {
     assert.equal(examplejs_printLines.join("\n"), "\"-2\""); examplejs_printLines = [];
   });
           
+  it("sleb128():array", function () {
+    examplejs_printLines = [];
+    var _ = jpacks;
+    var _schema = _.array(_.uleb128, null);
+
+    examplejs_print(_.stringify(_schema))
+    assert.equal(examplejs_printLines.join("\n"), "array('uleb128',null)"); examplejs_printLines = [];
+
+    var buffer = _.pack(_schema, ['1', '2', '3', '4', '1609531171697315243', '9008000000011122', 0, 0]);
+
+    examplejs_print(buffer.join(' '));
+    assert.equal(examplejs_printLines.join("\n"), "1 2 3 4 171 155 191 255 170 130 141 171 22 242 214 140 129 167 151 128 16 0 0"); examplejs_printLines = [];
+
+    examplejs_print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(examplejs_printLines.join("\n"), "[\"1\",\"2\",\"3\",\"4\",\"1609531171697315243\",\"9008000000011122\",\"0\",\"0\"]"); examplejs_printLines = [];
+  });
+          
 });
          
 
