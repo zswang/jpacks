@@ -300,6 +300,15 @@ module.exports = function(Schema) {
     });
     // * throw
     ```
+   * @example protobufCreator():coverage
+    ```js
+    var _ = jpacks;
+    var _schema = _.protobuf('package MyPackage; message MyMessage { repeated int32 arr = 1; }', 'MyPackage.MyMessage', null);
+
+    _.pack(_schema, null);
+    _.unpack(_schema, []);
+    _.protobuf()('package MyPackage; message MyMessage { repeated int32 arr = 1; }', 'MyPackage.MyMessage', null);
+    ```
    '''</example>'''
    */
   function protobufCreator(prototext, messagepath, size) {

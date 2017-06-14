@@ -5,128 +5,11 @@ var util = require('util');
 require('.././schemas-extend/bigint')(jpacks);
 require('.././schemas-extend/protobuf')(jpacks);
 require('.././schemas-extend/zlib')(jpacks);
+require('.././schemas-extend/leb128')(jpacks);
 
 jpacks.setDefaultOptions({
   browser: true
 });
-
-
-describe("src/schema.js", function () {
-  var assert = require('should');
-  var util = require('util');
-  var examplejs_printLines;
-  function examplejs_print() {
-    examplejs_printLines.push(util.format.apply(util, arguments));
-  }
-  
-  
-
-  it("arrayBufferFrom():string", function () {
-    examplejs_printLines = [];
-    var _ = jpacks;
-    var ab = _.arrayBufferFrom('abc');
-    examplejs_print(new Buffer(new Uint8Array(ab)).toString('hex'));
-    assert.equal(examplejs_printLines.join("\n"), "616263"); examplejs_printLines = [];
-  });
-          
-  it("arrayBufferFrom():string Unicode", function () {
-    examplejs_printLines = [];
-    var _ = jpacks;
-    var ab = _.arrayBufferFrom('汉字');
-    examplejs_print(new Buffer(new Uint8Array(ab)).toString('hex'));
-    assert.equal(examplejs_printLines.join("\n"), "e6b189e5ad97"); examplejs_printLines = [];
-  });
-          
-  it("together():base", function () {
-    examplejs_printLines = [];
-    var _ = jpacks;
-
-    function f(a, b, c) {
-      examplejs_print(JSON.stringify([a, b, c]));
-    }
-    var t = _.together(f);
-
-    t(1)()(2, 3);
-    assert.equal(examplejs_printLines.join("\n"), "[1,2,3]"); examplejs_printLines = [];
-
-    t(4)(5)()(6);
-    assert.equal(examplejs_printLines.join("\n"), "[4,5,6]"); examplejs_printLines = [];
-
-    t(7, 8, 9);
-    assert.equal(examplejs_printLines.join("\n"), "[7,8,9]"); examplejs_printLines = [];
-
-    t('a', 'b')('c');
-    assert.equal(examplejs_printLines.join("\n"), "[\"a\",\"b\",\"c\"]"); examplejs_printLines = [];
-
-    t()('x')()()('y')()()('z');
-    assert.equal(examplejs_printLines.join("\n"), "[\"x\",\"y\",\"z\"]"); examplejs_printLines = [];
-  });
-          
-  it("together():hook", function () {
-    examplejs_printLines = [];
-    var _ = jpacks;
-    function f(a, b, c) {}
-
-    var t = _.together(f, function(t, args) {
-      t.schema = 'f(' + args + ')';
-    });
-    examplejs_print(t(1)(2).schema);
-    assert.equal(examplejs_printLines.join("\n"), "f(1,2)"); examplejs_printLines = [];
-
-    function go() {
-      examplejs_print(1);
-    }
-    var g = _.together(go);
-    g();
-    assert.equal(examplejs_printLines.join("\n"), "1"); examplejs_printLines = [];
-  });
-          
-  it("together():base", function () {
-    examplejs_printLines = [];
-    var _ = jpacks;
-
-    function f(a, b, c) {
-      examplejs_print(JSON.stringify([a, b, c]));
-    }
-    var t = _.together(f);
-
-    t(1)()(2, 3);
-    assert.equal(examplejs_printLines.join("\n"), "[1,2,3]"); examplejs_printLines = [];
-
-    t(4)(5)()(6);
-    assert.equal(examplejs_printLines.join("\n"), "[4,5,6]"); examplejs_printLines = [];
-
-    t(7, 8, 9);
-    assert.equal(examplejs_printLines.join("\n"), "[7,8,9]"); examplejs_printLines = [];
-
-    t('a', 'b')('c');
-    assert.equal(examplejs_printLines.join("\n"), "[\"a\",\"b\",\"c\"]"); examplejs_printLines = [];
-
-    t()('x')()()('y')()()('z');
-    assert.equal(examplejs_printLines.join("\n"), "[\"x\",\"y\",\"z\"]"); examplejs_printLines = [];
-  });
-          
-  it("together():hook", function () {
-    examplejs_printLines = [];
-    var _ = jpacks;
-    function f(a, b, c) {}
-
-    var t = _.together(f, function(t, args) {
-      t.schema = 'f(' + args + ')';
-    });
-    examplejs_print(t(1)(2).schema);
-    assert.equal(examplejs_printLines.join("\n"), "f(1,2)"); examplejs_printLines = [];
-
-    function go() {
-      examplejs_print(1);
-    }
-    var g = _.together(go);
-    g();
-    assert.equal(examplejs_printLines.join("\n"), "1"); examplejs_printLines = [];
-  });
-          
-});
-         
 
 describe("src/schemas/array.js", function () {
   var assert = require('should');
@@ -807,6 +690,70 @@ describe("src/schemas/string.js", function () {
   
   
 
+  it("stringBytes():base", function () {
+    examplejs_printLines = [];
+    var _ = jpacks;
+    var buffer = _.pack(_.bytes(20), _.stringBytes('你好世界！Hello'));
+
+    examplejs_print(buffer.join(' '));
+    assert.equal(examplejs_printLines.join("\n"), "228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111"); examplejs_printLines = [];
+  });
+          
+  it("stringBytes():coverage", function () {
+    examplejs_printLines = [];
+    var _ = jpacks;
+    function TextEncoder() {}
+    TextEncoder.prototype.encode = function (value) {
+      return new Buffer(value);
+    };
+    global.TextEncoder = TextEncoder;
+
+    var buffer = _.pack(_.bytes(20), _.stringBytes('你好世界！Hello'));
+
+    setTimeout(function () {
+      delete global.TextEncoder;
+    }, 0);
+
+    examplejs_print(buffer.join(' '));
+    assert.equal(examplejs_printLines.join("\n"), "228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111"); examplejs_printLines = [];
+  });
+          
+  it("stringCreator():static", function () {
+    examplejs_printLines = [];
+    var _ = jpacks;
+    var _schema = _.string(25);
+    examplejs_print(_.stringify(_schema));
+    assert.equal(examplejs_printLines.join("\n"), "string(25)"); examplejs_printLines = [];
+
+    var buffer = _.pack(_schema, '你好世界！Hello');
+    examplejs_print(buffer.join(' '));
+
+    assert.equal(examplejs_printLines.join("\n"), "228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111 0 0 0 0 0"); examplejs_printLines = [];
+    examplejs_print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(examplejs_printLines.join("\n"), "\"你好世界！Hello\\u0000\\u0000\\u0000\\u0000\\u0000\""); examplejs_printLines = [];
+  });
+          
+  it("stringCreator():dynamic", function () {
+    examplejs_printLines = [];
+    var _ = jpacks;
+    var _schema = _.string('int8');
+    examplejs_print(_.stringify(_schema));
+    assert.equal(examplejs_printLines.join("\n"), "string('int8')"); examplejs_printLines = [];
+
+    var buffer = _.pack(_schema, '你好世界！Hello');
+    examplejs_print(buffer.join(' '));
+
+    assert.equal(examplejs_printLines.join("\n"), "20 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111"); examplejs_printLines = [];
+    examplejs_print(_.unpack(_schema, buffer));
+    assert.equal(examplejs_printLines.join("\n"), "你好世界！Hello"); examplejs_printLines = [];
+  });
+          
+  it("stringCreator():coverage", function () {
+    examplejs_printLines = [];
+    var _ = jpacks;
+    _.string();
+  });
+          
   it("shortString", function () {
     examplejs_printLines = [];
     var _ = jpacks;

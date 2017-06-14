@@ -2,7 +2,7 @@
   "name": "jpacks",
   "title": "c struct packer",
   "description": "Binary data packing and unpacking.",
-  "version": "0.8.2",
+  "version": "0.8.5",
   "homepage": "http://github.com/zswang/jpacks",
   "main": "jpacks.js",
   "author": {
@@ -35,14 +35,15 @@
     "protobufjs": "^4.1.2"
   },
   "devDependencies": {
-    "mocha": "^2.0.1",
+    "examplejs": "^0.1.18",
     "istanbul": "^0.3.17",
-    "should": "^4.1.0",
-    "uglify-js": "^2.4.15",
     "jdists": "^1.3.8",
     "jshint": "^2.8.0",
-    "examplejs": "^0.1.18",
-    "jstrs": "^0.0.1"
+    "jstrs": "^0.0.1",
+    "leb128": "0.0.0",
+    "mocha": "^2.0.1",
+    "should": "^4.1.0",
+    "uglify-js": "^2.4.15"
   },
   "scripts": {
     "_update_version": "jdists version.jdists",
@@ -51,7 +52,7 @@
     "_compress": "uglifyjs jpacks.js -o jpacks.min.js -p 5 -c -m",
     "example": "examplejs src/**/*.js -o test/example.js -h example.inc.js && examplejs schemas-extend/**/*.js -o test/schemas-extend.js -h example.inc.js",
     "test": "istanbul cover --hook-run-in-context node_modules/mocha/bin/_mocha -- -R spec",
-    "mocha": "jdists example.jdists.js -o test/example.js && mocha",
+    "mocha": "npm run example && mocha",
     "dist": "npm run _update_version && npm run example && npm run _dist_dev && npm run _dist && npm run _compress && npm run test",
     "lint": "jshint src/**/*.js src/*.js *.json schemas-extend/*.js"
   },

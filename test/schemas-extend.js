@@ -5,6 +5,7 @@ var util = require('util');
 require('.././schemas-extend/bigint')(jpacks);
 require('.././schemas-extend/protobuf')(jpacks);
 require('.././schemas-extend/zlib')(jpacks);
+require('.././schemas-extend/leb128')(jpacks);
 
 jpacks.setDefaultOptions({
   browser: true
@@ -105,6 +106,75 @@ describe("schemas-extend/bigint.js", function () {
     assert.equal(examplejs_printLines.join("\n"), "255 255 255 255 255 255 255 254"); examplejs_printLines = [];
 
     examplejs_print(JSON.stringify(_.unpack(_schema, buffer, { littleEndian: false })));
+    assert.equal(examplejs_printLines.join("\n"), "\"-2\""); examplejs_printLines = [];
+  });
+          
+});
+         
+
+describe("schemas-extend/leb128.js", function () {
+  var assert = require('should');
+  var util = require('util');
+  var examplejs_printLines;
+  function examplejs_print() {
+    examplejs_printLines.push(util.format.apply(util, arguments));
+  }
+  
+  
+
+  it("uleb128():string", function () {
+    examplejs_printLines = [];
+    var _ = jpacks;
+    var _schema = _.uleb128;
+    examplejs_print(_.stringify(_schema))
+    assert.equal(examplejs_printLines.join("\n"), "'uleb128'"); examplejs_printLines = [];
+
+    var buffer = _.pack(_schema, '1609531171697315243');
+
+    examplejs_print(buffer.join(' '));
+    assert.equal(examplejs_printLines.join("\n"), "171 155 191 255 170 130 141 171 22"); examplejs_printLines = [];
+
+    examplejs_print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(examplejs_printLines.join("\n"), "\"1609531171697315243\""); examplejs_printLines = [];
+  });
+          
+  it("uleb128():number", function () {
+    examplejs_printLines = [];
+    var _ = jpacks;
+    var _schema = _.uleb128;
+    examplejs_print(_.stringify(_schema))
+    assert.equal(examplejs_printLines.join("\n"), "'uleb128'"); examplejs_printLines = [];
+
+    var buffer = _.pack(_schema, 171697315);
+
+    examplejs_print(buffer.join(' '));
+    assert.equal(examplejs_printLines.join("\n"), "163 201 239 81"); examplejs_printLines = [];
+
+    examplejs_print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(examplejs_printLines.join("\n"), "\"171697315\""); examplejs_printLines = [];
+  });
+          
+  it("sleb128():-1,-2", function () {
+    examplejs_printLines = [];
+    var _ = jpacks;
+    var _schema = _.sleb128;
+    examplejs_print(_.stringify(_schema))
+    assert.equal(examplejs_printLines.join("\n"), "'sleb128'"); examplejs_printLines = [];
+
+    var buffer = _.pack(_schema, '-1');
+
+    examplejs_print(buffer.join(' '));
+    assert.equal(examplejs_printLines.join("\n"), "127"); examplejs_printLines = [];
+
+    examplejs_print(JSON.stringify(_.unpack(_schema, buffer)));
+    assert.equal(examplejs_printLines.join("\n"), "\"-1\""); examplejs_printLines = [];
+
+    var buffer = _.pack(_schema, '-2');
+
+    examplejs_print(buffer.join(' '));
+    assert.equal(examplejs_printLines.join("\n"), "126"); examplejs_printLines = [];
+
+    examplejs_print(JSON.stringify(_.unpack(_schema, buffer)));
     assert.equal(examplejs_printLines.join("\n"), "\"-2\""); examplejs_printLines = [];
   });
           
@@ -283,6 +353,16 @@ describe("schemas-extend/protobuf.js", function () {
     });
     // * throw
     }).should.throw();
+  });
+          
+  it("protobufCreator():coverage", function () {
+    examplejs_printLines = [];
+    var _ = jpacks;
+    var _schema = _.protobuf('package MyPackage; message MyMessage { repeated int32 arr = 1; }', 'MyPackage.MyMessage', null);
+
+    _.pack(_schema, null);
+    _.unpack(_schema, []);
+    _.protobuf()('package MyPackage; message MyMessage { repeated int32 arr = 1; }', 'MyPackage.MyMessage', null);
   });
           
 });

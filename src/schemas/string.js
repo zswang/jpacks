@@ -17,11 +17,31 @@ module.exports = function (Schema) {
    * @return {Schema} 返回解析类型
    '''<example>'''
    * @example stringBytes():base
+    ```js
     var _ = jpacks;
     var buffer = _.pack(_.bytes(20), _.stringBytes('你好世界！Hello'));
 
     console.log(buffer.join(' '));
     // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
+    ```
+   * @example stringBytes():coverage
+    ```js
+    var _ = jpacks;
+    function TextEncoder() {}
+    TextEncoder.prototype.encode = function (value) {
+      return new Buffer(value);
+    };
+    global.TextEncoder = TextEncoder;
+
+    var buffer = _.pack(_.bytes(20), _.stringBytes('你好世界！Hello'));
+
+    setTimeout(function () {
+      delete global.TextEncoder;
+    }, 0);
+
+    console.log(buffer.join(' '));
+    // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
+    ```
    '''</example>'''
    */
  function stringBytes(value, options) {
@@ -46,6 +66,7 @@ module.exports = function (Schema) {
    * @return {Schema} 返回数据结构
    '''<example>'''
    * @example stringCreator():static
+    ```js
     var _ = jpacks;
     var _schema = _.string(25);
     console.log(_.stringify(_schema));
@@ -55,9 +76,11 @@ module.exports = function (Schema) {
     console.log(buffer.join(' '));
 
     // > 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111 0 0 0 0 0
-    console.log(_.unpack(_schema, buffer));
-    // > 你好世界！Hello
+    console.log(JSON.stringify(_.unpack(_schema, buffer)));
+    // > "你好世界！Hello\u0000\u0000\u0000\u0000\u0000"
+    ```
    * @example stringCreator():dynamic
+    ```js
     var _ = jpacks;
     var _schema = _.string('int8');
     console.log(_.stringify(_schema));
@@ -69,10 +92,15 @@ module.exports = function (Schema) {
     // > 20 228 189 160 229 165 189 228 184 150 231 149 140 239 188 129 72 101 108 108 111
     console.log(_.unpack(_schema, buffer));
     // > 你好世界！Hello
+    ```
+   * @example stringCreator():coverage
+    ```js
+    var _ = jpacks;
+    _.string();
+    ```
    '''</example>'''
    */
   function stringCreator(size) {
-    // console.log('stringCreator', Schema.stringify(size));
     var schema = Schema.array('uint8', size);
     return new Schema({
       unpack: function _unpack(buffer, options, offsets) {
